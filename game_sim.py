@@ -35,7 +35,7 @@ def handle_help(choice):
         case ['quit'] | ['q']:
            text = util.help_quit
         case _:
-            text += f'Did not recognize options {" ".join(choice)}'
+            text = f'Did not recognize options {" ".join(choice)}'
     return text
 
 #The logic for the "show" command
