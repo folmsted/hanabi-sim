@@ -52,14 +52,24 @@ def handle_printing(choice, game):
             text = game.represent_play()
         case ['discard'] | ['d']:
             text = game.represent_discard()
+        case ['card', player, position] | ['c', player, position]:
+            try: player = util.resolve_player(player, game)
+            except (ValueError, IndexError, KeyError) as e: return e.args[0]
+            try: position = int(position)
+            except ValueError: return f'Expected an integer card position; yours: {position}.'
+            if not 1 <= position <= len(player.hand):
+                return f'Position {position} is out of range'
+            text = player.represent_card(position - 1)
+        case ['card', *args] | ['c', *args]:
+            text = 'Additional input required for card histroy; see "help show"'
         case ['hand', *args] | ['h', *args]:
             if len(args) > 1: return f'Unrecognized arguments {", ".join(args)}; try "help show"'
             try: player_request = args[0]
             except: player_request = game.player_up + 1 #default is player up
             try: player = util.resolve_player(player_request, game)
             except (KeyError, IndexError) as e: return e.args[0]
-            text = str(player)#string representation is the table
-        case _:
+            text = str(player)
+        case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show"'
     return text
 
@@ -76,9 +86,9 @@ def handle_play(choice, game, verbose=False):
     except ValueError as e: return game, e.args[0]
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
-    if (not 1 <= position <= 5):
-        return game, f'Your specified position ({position}) was not in range.'
     player = game.get_player(game.player_up)
+    if (not 1 <= position <= len(player.hand)):
+        return game, f'Your specified position ({position}) was not in range.'
     try:
         new_state = player.perform_play(position - 1, card, verbose=verbose)
     except HanabiRulesException:
@@ -116,7 +126,7 @@ def handle_hint(choice, game, verbose=False):
         positions = [int(p) - 1 for p in positions]
     except ValueError:
         return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
-    if (not all([0 <= p <= 4 for p in positions])):
+    if (not all([0 <= p <= 4 for p in positions])): #TODO make target_player hand length matter, not hardcoded 4
         return game, 'Positions must be between 1 and 5, inclusive.'
     #do the hint
     try:
@@ -138,9 +148,9 @@ def handle_discard(choice, game, verbose=False):
     except ValueError as e: return game, e.args[0]
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
-    if (not 1 <= position <= 5):
-        return game, f'Your specified position ({position}) was not in range.'
     player = game.get_player(game.player_up)
+    if (not 1 <= position <= len(player.hand)):
+        return game, f'Your specified position ({position}) was not in range.'
     try:
         new_game_state = player.perform_discard(position - 1, card, verbose=verbose)
     except HanabiRulesException as e:
@@ -150,7 +160,6 @@ def handle_discard(choice, game, verbose=False):
         try: card_text = '\nThe card:\n' + str(player.hand[position - 1])
         except: card_text = ''
         return game, e.args[0] + card_text
-    #game.advance_turn()
     return new_game_state, 'Success; advancing turn'
 
 #The logic for the "guess" command
@@ -168,7 +177,7 @@ def handle_guess(choice, game, verbose=False):
     except HanabiSimException as e: return e.args[0]
     try: position = int(position)
     except ValueError: return game, f'Invalid position; expected number 1 to 5; yours: {position}'
-    if (not 1 <= position <= 5):
+    if (not 1 <= position <= len(player.hand)):
         return game, f'Positions must be between 1 and 5, inclusive; yours: {position}'
     #apply the guess
     try: new_state = player.perform_guess(position - 1, guess, verbose=verbose)
@@ -197,8 +206,8 @@ def handle_swap(choice, game, verbose=False):
         return game, f'Positive integers less than or equal to hand size expected.'\
                      f'  Yours: {index1 , index2}; hand size: {len(player.hand)}'
     return new_state, 'Success'
-       
-    
+
+ 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(prog='hanabi_sim',
@@ -213,9 +222,13 @@ if __name__ == '__main__':
     verbose = args.verbose
     setup_choices = []
     if infile_name:
-        infile = open(infile_name, 'r')
-        setup_choices = infile.readlines()
-        infile.close()
+        try:
+            infile = open(infile_name, 'r')
+            setup_choices = infile.readlines()
+            infile.close()
+        except:
+            if infile: del infile
+            print(f'Error reading infile; {infile_name}; infile use aborted.')
     if outfile_name:
         outfile = open(outfile_name, 'w')
 

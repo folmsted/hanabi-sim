@@ -148,6 +148,7 @@ class OutstandingCards:
 
 class DiscardedCards:
     """
+    A collection of all cards which have been discarded.
     """
     def __init__(self):
         self.cards = {color : [] for color in (Color)}
@@ -216,6 +217,7 @@ class GameState:
 
     def represent_discard(self):
         return str(self.discard)
+
     def represent_general(self):
         players = 'Players (in order): ' + ', '.join([p.name for p in self.players]) + '\n'
         return players + tabulate([
@@ -225,6 +227,9 @@ class GameState:
                headers='firstrow',
                tablefmt='pretty'
         )
+
+       
+        
 
     def copy(self):
         players_copy = [p.copy() for p in self.players]
@@ -285,7 +290,7 @@ class UnknownCard:
         self.color_guess = None
         self.number_guess = None
         #TODO implement logic to retrieve previous states of a card and when it changed from them
-        #self.previous_states = []
+        self.previous_states = []
 
     def hint_color_positive(self, color):
         """
@@ -298,6 +303,7 @@ class UnknownCard:
         if self.colors == {color}: return self #nothing to do
         new_state = self.copy()
         new_state.colors = {color}
+        new_state.previous_states.append(self)
         return new_state
 
     def hint_color_negative(self, color):
@@ -311,6 +317,7 @@ class UnknownCard:
         new_state.colors.discard(color)
         if len(new_state.colors) == 0:
             raise HanabiSimException(f'Inconsistent hints; color {style_text(color, color.name)} was the only possible color for a non-hinted card.')
+        new_state.previous_states.append(self)
         return new_state
 
     def hint_number_positive(self, number):
@@ -324,6 +331,7 @@ class UnknownCard:
         if self.numbers == {number}: return self #nothing to do
         new_state = self.copy()
         new_state.numbers = {number}
+        new_state.previous_states.append(self)
         return new_state
 
     def hint_number_negative(self, number):
@@ -337,6 +345,7 @@ class UnknownCard:
         new_state.numbers.discard(number)
         if len(new_state.numbers) == 0:
             raise HanabiSimException(f'Inconsistent hints; number {number} was the only possible number for a non-hinted card.')
+        new_state.previous_states.append(self)
         return new_state
 
     #TODO guess functionality may not be in line with the intended usage for hanabi-sim
@@ -350,6 +359,7 @@ class UnknownCard:
         if number == self.number_guess: return self #nothing to do
         new_state = self.copy()
         new_state.number_guess = number
+        new_state.previous_states.append(self)
         return new_state
 
     def guess_color(self, color):
@@ -361,6 +371,7 @@ class UnknownCard:
         if color == self.color_guess: return self #nothing to do
         new_state = self.copy()
         new_state.color_guess = color
+        new_state.previous_states.append(self)
         return new_state
 
     def __str__(self):
@@ -383,12 +394,18 @@ class UnknownCard:
                         tablefmt='pretty')
         return rep
 
+    def show_past_states(self):
+        fake_hand = Hand(0) #a bit of a hack, but we basically want the same representation
+        fake_hand.hand = [*self.previous_states, self]
+        return str(fake_hand)
+
     def copy(self):
         cpy = UnknownCard(self.round_drawn)
         cpy.colors = self.colors.copy()
         cpy.numbers = self.numbers.copy()
         cpy.color_guess = self.color_guess
         cpy.number_guess = self.number_guess
+        cpy.previous_states = [c for c in self.previous_states]
         return cpy
 
     def __eq__(self, other):
@@ -397,7 +414,8 @@ class UnknownCard:
                self.numbers == other.numbers           and \
                self.color_guess == other.color_guess   and \
                self.number_guess == other.number_guess and \
-               self.round_drawn == olther.round_drawn
+               self.round_drawn == other.round_drawn   and \
+               self.previous_states == other.previous_states
 
 class Hand:
     """
@@ -670,6 +688,14 @@ class Player:
     def __str__(self):
         return str(f'{self.name}:\n{self.hand}')
 
+    def represent_card(self, position):
+        """
+        Show a card in all the states it has held over time, up to and including now.
+        """
+        return self.hand[position].show_past_states()
+        
+         
+ 
 
 class HanabiRulesException(Exception):
 

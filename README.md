@@ -5,7 +5,7 @@ This is not an _implementation_ of Hanabi; it does not allow you to play.  Rathe
 
 Usage:
 
-`python3 hanabi_sim.py [options]`
+`python3 game_sim.py [options]`
 
 You can specify `-o <outfile>` to record the commands to a file.  Similarly, use `-i <infile>` to load the commands from a file.  There is a `-v` option which causes hanabi-sim to automatically print the hand of the relevant player after an action is taken.
 
