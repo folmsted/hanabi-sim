@@ -69,7 +69,6 @@ class Card:
             return False
         return self.color == other.color and self.number == other.number
 
-    #immutable; returning self is safe
     def copy(self):
         return self
 
@@ -195,9 +194,7 @@ class GameState:
     def __init__(self, players=default_players, protocols=default_protocols):
         self.misfires = self.STARTING_MISFIRES
         self.hints = self.STARTING_HINTS
-        #self.play = self.STARTING_PLAY
         self.play = PlayedCards()
-        #self.discard = self.STARTING_DISCARD
         self.discard = DiscardedCards()
         self.player_up = self.STARTING_PLAYER_UP
         self.round = self.STARTING_ROUND
@@ -227,9 +224,6 @@ class GameState:
                headers='firstrow',
                tablefmt='pretty'
         )
-
-       
-        
 
     def copy(self):
         players_copy = [p.copy() for p in self.players]
@@ -289,8 +283,7 @@ class UnknownCard:
         self.round_drawn = round_drawn
         self.color_guess = None
         self.number_guess = None
-        self.round_updated, self.turn_updated = (round_drawn, turn_drawn) #when the card's possible states last changed
-        #TODO implement logic to retrieve previous states of a card and when it changed from them
+        self.round_updated, self.turn_updated = (round_drawn, turn_drawn)
         self.previous_states = []
 
     def hint_color_positive(self, color, rnd, trn):
@@ -419,14 +412,15 @@ class UnknownCard:
         cpy.previous_states = [c for c in self.previous_states]
         return cpy
 
-    #TODO compare new fields
     def __eq__(self, other):
         if not isinstance(other, UnknownCard): return False
-        return self.colors == other.colors             and \
-               self.numbers == other.numbers           and \
-               self.color_guess == other.color_guess   and \
-               self.number_guess == other.number_guess and \
-               self.round_drawn == other.round_drawn   and \
+        return self.colors == other.colors               and \
+               self.numbers == other.numbers             and \
+               self.color_guess == other.color_guess     and \
+               self.number_guess == other.number_guess   and \
+               self.round_drawn == other.round_drawn     and \
+               self.round_updated == other.round_updated and \
+               self.turn_updated == other.turn_updated   and \
                self.previous_states == other.previous_states
 
 class Hand:
@@ -500,10 +494,10 @@ class Hand:
         except IndexError: raise HanabiSimException(f'No card at position {position + 1.}') #TODO propagate index
         if isinstance(guess, int):
             if guess not in card.numbers: raise HanabiSimException('Bad guess; number already disqualified')
-            new_card_state = self.guess_number(guess)
+            new_card_state = card.guess_number(guess)
         elif isinstance(guess, Color):
             if guess not in card.colors: raise HanabiSimException('Bad guess; color already disqualified')
-            new_card_state = guess_color(guess)
+            new_card_state = card.guess_color(guess)
         new_hand = self.copy()
         new_hand.hand[position] = new_card_state
         return new_hand
@@ -672,13 +666,13 @@ class Player:
         """
         if not isinstance(position, int) or not (0 <= position <= 4):
             raise HanabiSimException(f'Invalid position ({position}) given.') #TODO propagate index properly
-        new_game_state = self.game.copy()
+        new_state = self.game.copy()
         player = new_state.get_player(self.game.players.index(self)) #get player in new state
         try: player.hand = player.hand.process_guess(position, guess)
         except HanabiSimException as e: raise e
         new_state.previous_state = self.game
         if verbose: print(str(player))
-        return new_game_state
+        return new_state
 
     def perform_swap(self, pos1, pos2, verbose=False):
         """

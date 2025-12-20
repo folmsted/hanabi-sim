@@ -38,6 +38,10 @@ def handle_help(choice):
             text = f'Did not recognize options {" ".join(choice)}'
     return text
 
+def handle_about(options):
+    if options: return f'Did not recognize options {" ".join(options)}.'
+    return util.help_about
+
 #The logic for the "show" command
 def handle_printing(choice, game):
     match choice:
@@ -174,7 +178,7 @@ def handle_guess(choice, game, verbose=False):
     try: player = util.resolve_player(player, game)
     except (ValueError, IndexError, KeyError) as e: return game, e.args[0]
     try: guess = util.read_color_or_number(guess)
-    except HanabiSimException as e: return e.args[0]
+    except HanabiSimException as e: return game, e.args[0]
     try: position = int(position)
     except ValueError: return game, f'Invalid position; expected number 1 to 5; yours: {position}'
     if (not 1 <= position <= len(player.hand)):
@@ -257,6 +261,8 @@ if __name__ == '__main__':
                 continue
             case ['help', *options] | ['?', *options]:
                 print(handle_help(options))
+            case ['about', *options] | ['a', *options]:
+                print(handle_about(options))
             case ['show', *options] | ['s', *options]:
                 print(handle_printing(options, game))
             case ['play', *options] | ['p', *options]:
