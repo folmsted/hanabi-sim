@@ -283,16 +283,17 @@ class UnknownCard:
     A card whose identity is not certain; it may be restricted by hints which exclude
     certain colors or numbers from the card's possible identities.
     """
-    def __init__(self, round_drawn):
+    def __init__(self, round_drawn, turn_drawn):
         self.colors = {color for color in (Color)}
         self.numbers = {*range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1)}
         self.round_drawn = round_drawn
         self.color_guess = None
         self.number_guess = None
+        self.round_updated, self.turn_updated = (round_drawn, turn_drawn) #when the card's possible states last changed
         #TODO implement logic to retrieve previous states of a card and when it changed from them
         self.previous_states = []
 
-    def hint_color_positive(self, color):
+    def hint_color_positive(self, color, rnd, trn):
         """
         Update a card as a result of a color hint which mentions the card explicitly;
         for example, a hint which tells this card is blue.
@@ -304,9 +305,10 @@ class UnknownCard:
         new_state = self.copy()
         new_state.colors = {color}
         new_state.previous_states.append(self)
+        new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
 
-    def hint_color_negative(self, color):
+    def hint_color_negative(self, color, rnd, trn):
         """
         Update a card as a result of a color hint which mentions only other cards;
         for example, a hint which tells another card card is red.
@@ -318,9 +320,10 @@ class UnknownCard:
         if len(new_state.colors) == 0:
             raise HanabiSimException(f'Inconsistent hints; color {style_text(color, color.name)} was the only possible color for a non-hinted card.')
         new_state.previous_states.append(self)
+        new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
 
-    def hint_number_positive(self, number):
+    def hint_number_positive(self, number, rnd, trn):
         """
         Update a card as a result of a number hint which mentions the card explicitly;
         for example, a hint which tells this card has value 3.
@@ -332,9 +335,10 @@ class UnknownCard:
         new_state = self.copy()
         new_state.numbers = {number}
         new_state.previous_states.append(self)
+        new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
 
-    def hint_number_negative(self, number):
+    def hint_number_negative(self, number, rnd, trn):
         """
         Update a card as a result of a number hint which mentions only other cards;
         for example, a hint which tells another card has value 2.
@@ -346,6 +350,7 @@ class UnknownCard:
         if len(new_state.numbers) == 0:
             raise HanabiSimException(f'Inconsistent hints; number {number} was the only possible number for a non-hinted card.')
         new_state.previous_states.append(self)
+        new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
 
     #TODO guess functionality may not be in line with the intended usage for hanabi-sim
@@ -390,7 +395,11 @@ class UnknownCard:
             guess_text(number, str(number)) if number == self.number_guess
             else str(number) for number in self.numbers
         ])
-        rep = tabulate([[colorstr], [self.round_drawn], [numberstr]], \
+        rep = tabulate([[f'RD: {self.round_drawn}'],
+                        [colorstr],
+                        [f'RU: {self.round_updated}'],
+                        [f'TU: {self.turn_updated}'],
+                        [numberstr]], \
                         tablefmt='pretty')
         return rep
 
@@ -400,14 +409,17 @@ class UnknownCard:
         return str(fake_hand)
 
     def copy(self):
-        cpy = UnknownCard(self.round_drawn)
+        cpy = UnknownCard(self.round_drawn, self.turn_updated)
         cpy.colors = self.colors.copy()
         cpy.numbers = self.numbers.copy()
         cpy.color_guess = self.color_guess
         cpy.number_guess = self.number_guess
+        cpy.round_updated = self.round_updated 
+        cpy.turn_updated = self.turn_updated
         cpy.previous_states = [c for c in self.previous_states]
         return cpy
 
+    #TODO compare new fields
     def __eq__(self, other):
         if not isinstance(other, UnknownCard): return False
         return self.colors == other.colors             and \
@@ -422,7 +434,7 @@ class Hand:
     A collection of the cards in the hand of a player
     """
     def __init__(self, HAND_SIZE):
-        self.hand = [UnknownCard(0) for _ in range(HAND_SIZE)]
+        self.hand = [UnknownCard(0, '-') for _ in range(HAND_SIZE)]
 
     def __getitem__(self, item):
         return self.hand[item]
@@ -442,9 +454,16 @@ class Hand:
 
             ]) for card in self.hand
         ]
-        rounds_drawn = [card.round_drawn for card in self.hand]
-        rep = tabulate([colorstrs, rounds_drawn, numberstrs], \
-                        tablefmt='pretty')
+        rounds_drawn        = [f'RD: {card.round_drawn}'   for card in self.hand]
+        rounds_last_updated = [f'RU: {card.round_updated}' for card in self.hand]
+        turns_last_updated  = [f'TU: {card.turn_updated}'  for card in self.hand]
+        rep = tabulate([rounds_drawn,
+                       colorstrs,
+                       rounds_last_updated,
+                       turns_last_updated,
+                       numberstrs], \
+                       tablefmt='pretty'
+        )
         return rep
 
     def copy(self):
@@ -452,7 +471,7 @@ class Hand:
         cpy.hand = [card for card in self.hand] #UnknownCard immutable; shallow copy safe 
         return cpy
 
-    def process_hint(self, positions, hint):
+    def process_hint(self, positions, hint, r, t):
         """
         Update all cards in the hand according to a hint given.
         Positions which are given in the hint need to be updated positively
@@ -464,14 +483,14 @@ class Hand:
         for i, card in enumerate(self.hand):
             if isinstance(hint, Color):
                 try: 
-                    new_hand.hand[i] = card.hint_color_positive(hint) if i in positions \
-                                       else card.hint_color_negative(hint)
+                    new_hand.hand[i] = card.hint_color_positive(hint, r, t) if i in positions \
+                                       else card.hint_color_negative(hint, r, t)
                 except HanabiSimException as e:
                     raise HanabiSimException(e.args[0], i)
             else:
                 try:
-                    new_hand.hand[i] = card.hint_number_positive(hint) if i in positions \
-                                  else card.hint_number_negative(hint)
+                    new_hand.hand[i] = card.hint_number_positive(hint, r, t) if i in positions \
+                                  else card.hint_number_negative(hint, r, t)
                 except HanabiSimException as e:
                     raise HanabiSimException(e.args[0], i)
         return new_hand
@@ -496,25 +515,25 @@ class Hand:
         new_hand.hand[index1], new_hand.hand[index2] = new_hand[index2], new_hand[index1]
         return new_hand
 
-    def replace_card(self, cur_round, position, protocol):
+    def replace_card(self, cur_round, position, player):
         """
         Remove a card in the hand and replace it according to the player's preferred mode
         of hand organization.
         """
         new_hand = self.copy() 
-        match protocol:
+        match player.replenishment_protocol:
             #Player views his own cards (left to right) as 1, 2, ..., n
             case 'left_shift':
                 #If 1 is played, 2 becomes 1, 3 becomes 2, and so on, and the new card is n
                 del new_hand.hand[position]
-                new_hand.hand.append(UnknownCard(cur_round))
+                new_hand.hand.append(UnknownCard(cur_round, player.name))
             case 'right_shift':
                 #The new card is 1; if n is played then 1 becomes 2, 2 becomes 3, ... n - 1 becomes n
                 del new_hand.hand[position]
-                new_hand.hand.insert(0, UnknownCard(cur_round))
+                new_hand.hand.insert(0, UnknownCard(cur_round, player.name))
             case 'in_place':
                 #The new card takes the place of the old card.  If 3 is played, the new card is 3
-                new_hand.hand[position] = UnknownCard(cur_round)
+                new_hand.hand[position] = UnknownCard(cur_round, player.name)
             case _:
                 raise HanabiSimException('Illegal replenishment protocol')
         return new_hand
@@ -559,7 +578,7 @@ class Player:
         if (new_state.num_in_deck > 0):
             player = new_state.get_player(self.game.player_up)
             new_state.num_in_deck -= 1
-            player.hand = player.hand.replace_card(new_state.round, position, player.replenishment_protocol)
+            player.hand = player.hand.replace_card(new_state.round, position, player)
         else:
             player.hand = player.hand.copy()
             del player.hand.hand[position]
@@ -600,7 +619,7 @@ class Player:
         player = new_state.get_player(self.game.players.index(self)) #get player in new state
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            player.hand = player.hand.replace_card(new_state.round, position, player.replenishment_protocol)
+            player.hand = player.hand.replace_card(new_state.round, position, player)
         else:
             player.hand = player.hand.copy()
             del player.hand.hand[position]
@@ -636,7 +655,7 @@ class Player:
         new_state.previous_state = self.game
         player = new_state.get_player(player_input)
         try: 
-            player.hand = player.hand.process_hint(positions, hint)
+            player.hand = player.hand.process_hint(positions, hint, new_state.round, self.name)
         except HanabiSimException as e:
             e.args = (f'Card {e.args[1] + 1}: ' + e.args[0] + '\nThe card:\n' + str(player.hand[e.args[1]]),)
             raise e
