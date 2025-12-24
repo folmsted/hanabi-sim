@@ -725,3 +725,9 @@ class HanabiSimException(Exception):
 
     def __str__(self):
         return f'{self.message}'
+
+class HanabiIndexException(Exception):
+
+    def __init__(self, index, *args):
+        super().__init__(*args)
+        self.index = index

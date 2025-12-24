@@ -34,6 +34,16 @@ PROTOCOL_MAP = {
     'right_shift' : 'right_shift'
 }
 
+COMMENT_START = '//'
+
+def trim_comment(string, comment_delimiter=COMMENT_START):
+    """
+    Search for any part of a string which comes after the given comment_delimiter
+    Return a string which omits this portion.
+    """
+    x = string.find(comment_delimiter)
+    return string if x == -1 else string[:x]
+
 def get_players(setup_choices, outfile, color_picker):
     """
     Prompt the user (or read from file) to get the players and their preferred
@@ -48,27 +58,29 @@ def get_players(setup_choices, outfile, color_picker):
                          f'Enter player {len(players) + 1} name, or nothing to proceed to game:'))
         if outfile:
             outfile.write(playername + '\n')
-        if (not playername and len(players) < 2):
-            print('The game needs at least two players!')
+        playername = trim_comment(playername, COMMENT_START).strip()
+        if (not playername and len(players) < GameState.MIN_PLAYERS):
+            print(f'The game needs at least {GameState.MIN_PLAYERS} players!')
             continue
         if (not playername):
             return players, protocols
 
         invalid = True
         while (invalid):
-            protocol = setup_choices.pop(0).strip() if setup_choices else \
+            protocol = setup_choices.pop(0) if setup_choices else \
                        input(style_text(next(color_picker),\
                            f'Enter the replenishment protocol (in place|left shift|right shift)'\
                            f' for player {len(players) + 1} {playername}:'))
             if outfile:
                 outfile.write(protocol + '\n')
+            protocol = trim_comment(protocol).strip()
             try:
                 protocols.append(PROTOCOL_MAP[protocol.lower()])
                 players.append(playername)
                 invalid = False
             except:
                 pass
-        if len(players) == 6:
+        if len(players) == GameState.MAX_PLAYERS:
             print('The maximum number of players has been reached!')
             done = True
     return players, protocols
@@ -146,13 +158,12 @@ def resolve_player(choice, game):
     return player
  
 
-
 #help strings.  Moved here because they are unruly and ugly
 help_general = 'Possible commands (full|shortcut):\nabout|a, help|?, show|s, '\
                'play|p, hint|h, discard|d, guess|g, undo|u, swap, quit|q\n'\
                'Call hint with these arguments for more information on format.'
 
-help_about = 'This is hanabi-sim, a simulator for the public information'\
+help_about = 'This is hanabi-sim, a simulator for the public information '\
              'available in a game of Hanabi.\n'\
              'This tool tracks all the information which would be available '\
              'to a person with the following properties:\n'\
@@ -166,7 +177,7 @@ help_about = 'This is hanabi-sim, a simulator for the public information'\
              'including the hints, plays, and discards,\n'\
              'you should be able to access all information you know about '\
              'your own hand, and all the information which\n'\
-             'your partners know about their hands.  Use the "help" command'\
+             'your partners know about their hands.  Use the "help" command '\
              'for more specific information on usage.'
 
 help_help = 'The "help" command, short form "?".  You can call help with'\
@@ -175,17 +186,21 @@ help_help = 'The "help" command, short form "?".  You can call help with'\
             'help s (for help on the "show" command)\n'\
             'help hint (for help on the "hint" command)'
 
-help_show = 'The "show" command, short form "s".  Used to print information\n'\
+help_show = 'The "show" command, short form "s".  Used to print information.\n'\
             'Usages:\n'\
             'show outstanding|o (to print all outstanding cards)\n'\
             'show state|s (to show some general game state)\n'\
             'show play|p (to show which cards have been played successfully)\n'\
             'show discard|d (to show which cards are out of play)\n'\
-            'show hand|h [player] (to show the hand of [player] (defaults to current player))\n'\
-            '--->[player] can be a number indicating turn order '\
-            'or a string which unambiguously identifies the player.\n'\
-            '---> Output displays for each card the possible colors, '\
-            'turn drawn, and possible numbers.'
+            'show hand|h [player] (to show the hand of [player])\n'\
+            '---> [player] can be a number indicating turn order or a\n'\
+            '     string which unambiguously identifies the player (defaults to player up).\n'\
+            '---> Output displays for each card the round drawn (RD), possible colors,\n'\
+            '     round (RU) and turn (TU) last updated, and possible numbers.\n'\
+            'show card|c <player> <position> (to show information about a card in <player>\'s hand)\n'\
+            'This shows the history of all past states the card has had, and when.\n'\
+            '---> <player> can be a number indicating turn order or a\n'\
+            '     string which unambiguously identifies the player.'
 
 help_play = 'The "play" command, short form "p".  '\
             'Used to indicate that turn player should play a card.\n'\
@@ -204,14 +219,14 @@ help_hint = 'The "hint" command, short form "h".  Used to indicate'\
             'that the turn player should give a hint to another player.\n'\
             'Usage:\n'\
             'hint <player> <positions> <hint>\n'\
-            'This causes the hand of player <player> to be updated '\
-            'according to the hint <hint> for positions <positions>.\n'\
-            '---> <player> can be a number indicating turn order or a '\
-            'string which unambiguously identifies the player.\n'\
-            '---> <positions> is a space-separated list of numbers '\
-            'indicating the postions at which to apply the <hint>.\n'\
-            '---> <hint> is a number or a string (not both) representing '\
-            'the color or number being indicated.\n'\
+            'This causes the hand of <player> to be updated '\
+            'according to the <hint> for <positions>.\n'\
+            '---> <player> can be a number indicating turn order or a\n'\
+            '     string which unambiguously identifies the player by name.\n'\
+            '---> <positions> is a space-separated list of numbers\n'\
+            '     indicating the postions at which to apply the <hint>.\n'\
+            '---> <hint> is a number or a string (not both) representing\n'\
+            '     the color or number being indicated.\n'\
             'Examples:\n'\
             'hint 1 1 3 4 r (player 1 has red cards at positions 1, 3, 4)\n'\
             'hint fra 2 5 (the player whose name starts "fra" has a 5 at position 2)\n'\
@@ -236,17 +251,18 @@ help_guess = 'The "guess" command, short form "g".  Used to '\
              'guess the number or color or a card.\n'\
              'Usage:\n'\
              'guess <player> <position> <guess>\n'\
-             'This causes the hand of player <player> to be updated'\
-             ' according to the guess <guess> for position <position>.\n'\
+             'This causes the card at <position> in the hand of <player> to be '\
+             'updated according to <guess>.\n'\
              'Note that this does not advance play; it is just '\
              'a way to keep track of thoughts.\n'\
-             '---> <player> can be a number indicating turn order '\
-             'or a string which unambiguously identifies the player.\n'\
-             '---> <position> is a number indicating the postion at which to apply <guess>.\n'\
+             '---> <player> can be a number indicating turn order or a\n'\
+             '     string which unambiguously identifies the player by name.\n'\
+             '---> <position> is a number indicating the postion \n'\
+             '     at which to apply <guess>.\n'\
              '---> <guess> is a number or a string (not both) '\
              'representing the color or number being indicated.\n'\
              'Examples:\n'\
-                  'guess 1 4 g (player 1 guesses a green card is at position 4)\n'\
+             'guess 1 4 g (player 1 guesses a green card is at position 4)\n'\
              'guess jim 2 5 (the player whose name starts "jim" guesses a 5 is at position 2)\n'\
              'guess janos 3 red (player janos guesses a red card is at position 3)\n'\
              'guess 0 1 2 (player 0 guesses a 2 is at position 1)'
@@ -254,6 +270,7 @@ help_guess = 'The "guess" command, short form "g".  Used to '\
 help_undo = 'The "undo" command, short form "u".  Used to revert to the previous game state.\n'\
             'Usage:\n'\
             'undo'
+
 help_swap = 'The "swap" command (no short form).  Used to '\
             'swap the positions of two cards in a player\'s hand.\n'\
             'Usage:\n'\
@@ -262,10 +279,10 @@ help_swap = 'The "swap" command (no short form).  Used to '\
             ' and the card in <position2> to be placed in <position1>\n'\
             'Note that this does not advance play; it just '\
             'changes the order of cards in the hand.\n'\
-            '---> <player> can be a number indicating turn order or a '\
-            'string which unambiguously identifies the player.\n'\
-            '---> <position1> and <position2> are integers indicating '\
-            'the positions of the cards to swap.\n'\
+            '---> <player> can be a number indicating turn order or a\n'\
+            '     string which unambiguously identifies the player by name.\n'\
+            '---> <position1> and <position2> are integers indicating\n'\
+            '     the positions of the cards to swap.\n'\
             'Examples:\n'\
             'swap 1 4 5 (player 1 swaps the cards at positions 4 and 5)\n'\
             'swap sigismund 2 5 (the player whose name starts "sigismund" '\

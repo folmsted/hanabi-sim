@@ -63,7 +63,7 @@ def handle_printing(choice, game):
             except ValueError: return f'Expected an integer card position; yours: {position}.'
             if not 1 <= position <= len(player.hand):
                 return f'Position {position} is out of range'
-            text = player.represent_card(position - 1)
+            text = '{player.name} card {position}:\n{player.represent_card(position - 1)}'
         case ['card', *args] | ['c', *args]:
             text = 'Additional input required for card histroy; see "help show"'
         case ['hand', *args] | ['h', *args]:
@@ -255,7 +255,7 @@ if __name__ == '__main__':
             exit(0)
         if outfile:
             outfile.write(choice + '\n')
-        choice = choice.split()
+        choice = util.trim_comment(choice, util.COMMENT_START).split()
         match choice:
             case []:
                 continue
