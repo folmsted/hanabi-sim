@@ -101,6 +101,8 @@ def handle_play(choice, game, verbose=False):
         try: card_text = '\nThe card:\n' + str(player.hand[position - 1])
         except: card_text = ''
         return game, e.args[0] + card_text
+    except HanabiIndexException as e:
+        return game, f'Card {e.position + 1}: {e.args[0]}; length of hand: {len(player.hand)}.'
     return new_state, 'Success; advancing turn'
 
 #The logic for the "hint" command
@@ -120,6 +122,8 @@ def handle_hint(choice, game, verbose=False):
     except:
         #player given by name
         target_player = choice[0]
+    try: target_player = self.get_player(target_player)
+    except (IndexError, KeyError): return game, e.args[0]
     #resolve hint
     try: hint = util.read_color_or_number(hint) 
     except HanabiSimException as e: return game, e.args[0]
@@ -130,13 +134,16 @@ def handle_hint(choice, game, verbose=False):
         positions = [int(p) - 1 for p in positions]
     except ValueError:
         return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
-    if (not all([0 <= p <= 4 for p in positions])): #TODO make target_player hand length matter, not hardcoded 4
-        return game, 'Positions must be between 1 and 5, inclusive.'
+    if (not all([0 <= p <= len(target_player.hand) for p in positions])):
+        return game, f'Positions must be between 1 and hand length ({len(target_player.hand)}), inclusive.'
     #do the hint
     try:
         new_game_state = player.perform_hint(target_player, positions, hint, verbose=verbose)
     except (HanabiRulesException, HanabiSimException) as e:
         return game, e.args[0]
+    except HanabiIndexException as e:
+        return game, f'Position {e.position + 1}: {e.args[0]}; hand length: '\
+                     f'{len(target_player.hand)}.'
     return new_game_state, 'Success; advancing turn'
 
 #The logic for the "discard" command
@@ -164,6 +171,8 @@ def handle_discard(choice, game, verbose=False):
         try: card_text = '\nThe card:\n' + str(player.hand[position - 1])
         except: card_text = ''
         return game, e.args[0] + card_text
+    except HanabiIndexException as e:
+        return game, f'Card {e.position + 1}: {e.args[0]}; length of hand: {len(player.hand)}.'
     return new_game_state, 'Success; advancing turn'
 
 #The logic for the "guess" command
@@ -186,6 +195,7 @@ def handle_guess(choice, game, verbose=False):
     #apply the guess
     try: new_state = player.perform_guess(position - 1, guess, verbose=verbose)
     except HanabiSimException as e: return game, e.args[0]
+    except HanabiIndexException as e: return game, f'Position {e.position + 1}: {e.args[0]}.'
     return new_state, 'Success' 
 
 #The logic for the "swap" command
@@ -206,9 +216,8 @@ def handle_swap(choice, game, verbose=False):
     try: new_state = player.perform_swap(index1 - 1, index2 - 1, verbose=verbose)
     except (ValueError, HanabiSimException) as e:
         return game, e.args[0]
-    except IndexError as e:
-        return game, f'Positive integers less than or equal to hand size expected.'\
-                     f'  Yours: {index1 , index2}; hand size: {len(player.hand)}'
+    except HanabiIndexError as e:
+        return game, f'A supplied index ({e.position + 1}) was not a positive integer less '\                         f'than or equal to hand size; hand size: {len(player.hand)}.'
     return new_state, 'Success'
 
  
