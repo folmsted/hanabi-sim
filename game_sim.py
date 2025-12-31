@@ -91,18 +91,14 @@ def handle_play(choice, game, verbose=False):
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
-    if (not 1 <= position <= len(player.hand)):
-        return game, f'Your specified position ({position}) was not in range.'
     try:
         new_state = player.perform_play(position - 1, card, verbose=verbose)
     except HanabiRulesException:
         return game, e.args[0]
     except HanabiSimException as e:
-        try: card_text = '\nThe card:\n' + str(player.hand[position - 1])
-        except: card_text = ''
-        return game, e.args[0] + card_text
+        return game, e.args[0]
     except HanabiIndexException as e:
-        return game, f'Card {e.position + 1}: {e.args[0]}; length of hand: {len(player.hand)}.'
+        return game, f'Card {e.index + 1}: {e.args[0]}'
     return new_state, 'Success; advancing turn'
 
 #The logic for the "hint" command
@@ -116,16 +112,17 @@ def handle_hint(choice, game, verbose=False):
     #resolve target player
     try:
         #player given by turn order
-        target_player = int(choice[0]) - 1 #the player receiving the hint
-        if target_player < 0 or target_player > game.num_players - 1:
-            return game, f'Could not find a player {target_player + 1}; total players: {game.num_players}'
+        target_player = int(choice[0]) #the player receiving the hint
+        if target_player < 1 or target_player > game.num_players:
+            return game, f'Could not find a player {target_player}; total players: {game.num_players}'
+        target_player = target_player - 1
     except:
         #player given by name
         target_player = choice[0]
-    try: target_player = self.get_player(target_player)
+    try: target_player = game.get_player(target_player)
     except (IndexError, KeyError): return game, e.args[0]
     #resolve hint
-    try: hint = util.read_color_or_number(hint) 
+    try: hint = util.read_color_or_number(hint)
     except HanabiSimException as e: return game, e.args[0]
     #resolve positions
     if (not positions): return game, 'You must specify positions to hint to.'
@@ -134,16 +131,13 @@ def handle_hint(choice, game, verbose=False):
         positions = [int(p) - 1 for p in positions]
     except ValueError:
         return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
-    if (not all([0 <= p <= len(target_player.hand) for p in positions])):
-        return game, f'Positions must be between 1 and hand length ({len(target_player.hand)}), inclusive.'
     #do the hint
     try:
         new_game_state = player.perform_hint(target_player, positions, hint, verbose=verbose)
     except (HanabiRulesException, HanabiSimException) as e:
         return game, e.args[0]
     except HanabiIndexException as e:
-        return game, f'Position {e.position + 1}: {e.args[0]}; hand length: '\
-                     f'{len(target_player.hand)}.'
+        return game, f'Position {e.index + 1}: {e.args[0]}'
     return new_game_state, 'Success; advancing turn'
 
 #The logic for the "discard" command
@@ -160,19 +154,15 @@ def handle_discard(choice, game, verbose=False):
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
-    if (not 1 <= position <= len(player.hand)):
-        return game, f'Your specified position ({position}) was not in range.'
     try:
         new_game_state = player.perform_discard(position - 1, card, verbose=verbose)
     except HanabiRulesException as e:
         if e.args[0]: return (game, e.args[0])
         return (game, f'Cannot discard position {position}; no such card')
     except HanabiSimException as e:
-        try: card_text = '\nThe card:\n' + str(player.hand[position - 1])
-        except: card_text = ''
-        return game, e.args[0] + card_text
+        return game, e.args[0]
     except HanabiIndexException as e:
-        return game, f'Card {e.position + 1}: {e.args[0]}; length of hand: {len(player.hand)}.'
+        return game, f'Card {e.index + 1}: {e.args[0]}'
     return new_game_state, 'Success; advancing turn'
 
 #The logic for the "guess" command
@@ -190,12 +180,10 @@ def handle_guess(choice, game, verbose=False):
     except HanabiSimException as e: return game, e.args[0]
     try: position = int(position)
     except ValueError: return game, f'Invalid position; expected number 1 to 5; yours: {position}'
-    if (not 1 <= position <= len(player.hand)):
-        return game, f'Positions must be between 1 and 5, inclusive; yours: {position}'
     #apply the guess
     try: new_state = player.perform_guess(position - 1, guess, verbose=verbose)
     except HanabiSimException as e: return game, e.args[0]
-    except HanabiIndexException as e: return game, f'Position {e.position + 1}: {e.args[0]}.'
+    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
     return new_state, 'Success' 
 
 #The logic for the "swap" command
@@ -216,8 +204,8 @@ def handle_swap(choice, game, verbose=False):
     try: new_state = player.perform_swap(index1 - 1, index2 - 1, verbose=verbose)
     except (ValueError, HanabiSimException) as e:
         return game, e.args[0]
-    except HanabiIndexError as e:
-        return game, f'A supplied index ({e.position + 1}) was not a positive integer less '\                         f'than or equal to hand size; hand size: {len(player.hand)}.'
+    except HanabiIndexException as e:
+        return game, f'Card {e.index + 1}: {e.args[0]}'
     return new_state, 'Success'
 
  

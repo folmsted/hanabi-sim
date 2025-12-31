@@ -299,7 +299,8 @@ class UnknownCard:
         """
         if (color not in self.colors):
             raise HanabiSimException(f'Inconsistent hints: color {style_text(color, color.name)}'\
-                                     f' was previously ruled out for a hinted card.')
+                                     f' was previously ruled out for a hinted card.\nThe card:\n'\
+                                     f'{str(self)}')
         if self.colors == {color}: return self #nothing to do
         new_state = self.copy()
         new_state.colors = {color}
@@ -318,7 +319,8 @@ class UnknownCard:
         new_state.colors.discard(color)
         if len(new_state.colors) == 0:
             raise HanabiSimException(f'Inconsistent hints; color {style_text(color, color.name)}'\
-                                     f' was the only possible color for a non-hinted card.')
+                                     f' was the only possible color for a non-hinted card.\n'\
+                                     f'The card:\n{str(self)}') 
         new_state.previous_states.append(self)
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
@@ -331,7 +333,8 @@ class UnknownCard:
         """
         if (number not in self.numbers):
             raise HanabiSimException(f'Inconsistent hints; number {number} was '\
-                                     f'previously ruled out for a hinted card.')
+                                     f'previously ruled out for a hinted card.\n'\
+                                     f'The card:\n{str(self)}')
         if self.numbers == {number}: return self #nothing to do
         new_state = self.copy()
         new_state.numbers = {number}
@@ -350,7 +353,8 @@ class UnknownCard:
         new_state.numbers.discard(number)
         if len(new_state.numbers) == 0:
             raise HanabiSimException(f'Inconsistent hints; number {number} was the '\
-                                     f'only possible number for a non-hinted card.')
+                                     f'only possible number for a non-hinted card.\n'\
+                                     f'The card:\n{str(self)}')
         new_state.previous_states.append(self)
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
@@ -491,13 +495,13 @@ class Hand:
                     new_hand.hand[i] = card.hint_color_positive(hint, r, t) if i in positions \
                                        else card.hint_color_negative(hint, r, t)
                 except HanabiSimException as e:
-                    raise HanabiIndexException(i, e.args[0])
+                    raise HanabiIndexException(i, *e.args)
             else:
                 try:
                     new_hand.hand[i] = card.hint_number_positive(hint, r, t) if i in positions \
                                   else card.hint_number_negative(hint, r, t)
                 except HanabiSimException as e:
-                    raise HanabiIndexException(i, e.args[0])
+                    raise HanabiIndexException(i, *e.args)
         return new_hand
 
     def process_guess(self, position, guess):
@@ -567,19 +571,23 @@ class Player:
         if (self.game.hints == self.game.MAX_HINTS):
             raise HanabiRulesException('Cannot discard while hints are at maximum!')
         if (not 0 <= position < len(self.hand)):
-            raise HanabiIndexException(position, 'the position given was not in range.')
+            errstr = 'the position given was not in range.\n'\
+                     f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
+            raise HanabiIndexException(position, errstr)
         if card.color  not in self.hand[position].colors or\
            card.number not in self.hand[position].numbers:
-            raise HanabiSimException(f'Card {position + 1}: The card identity {card} '\
-                                     f'which you gave was not possible given prior hints.')
+            errstr = f'The card identity {card} which you gave was not possible '\
+                     f'given prior hints.\nThe card:\n{str(self.hand[position])}'
+            raise HanabiIndexException(position, errstr)
         new_state = self.game.copy()
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
         new_state.discard = new_state.discard.add(card)
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         except ValueError:
-            raise HanabiSimException(f'The card you specified, {card}, is '\
-                                     f'exhausted by prior plays and discards.')
+            errstr = f'The card you specified, {card}, is exhausted '\
+                     f'by prior plays and discards. (see "show outstanding")'
+            raise HanabiSimException(errstr)
         #Replenishment
         player = new_state.get_player(self.game.player_up)
         if (new_state.num_in_deck > 0):
@@ -600,12 +608,14 @@ class Player:
         and the hand of the player performing the discard.
         """
         if (not 0 <= position < len(self.hand)):
-            raise HanabiIndexException(position, 'the position you specified was not in range.')
+            errstr = 'the position you specified was not in range.\n'\
+                     f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
+            raise HanabiIndexException(position, errstr)
         if card.color not in self.hand[position].colors or \
            card.number not in self.hand[position].numbers:
-            raise HanabiSimException(f'The card identity {card} which you gave '\
-                                     f'was not possible given prior hints.')
-
+            errstr = f'The card identity {card} which you gave was not possible '\
+                     f'given prior hints.\nThe card:\n{str(self.hand[position])}'
+            raise HanabiIndexException(position, errstr)
         new_state = self.game.copy()
         #successful play
         if (card.number == new_state.play[card.color].number + 1): #TODO play
@@ -623,8 +633,9 @@ class Player:
         #update outstanding and replenish in any event
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         except ValueError:
-            raise HanabiSimException(f'The card you specified, {card}, is exhausted '\
-                                     f'by prior plays and discards.')
+            errstr = f'The card you specified, {card}, is exhausted '\
+                     f'by prior plays and discards. (see "show outstanding")' 
+            raise HanabiSimException(errstr)
         player = new_state.get_player(self.game.players.index(self)) #get player in new state
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
@@ -650,19 +661,21 @@ class Player:
         if not positions: raise HanabiSimException(f'You must specify the positions hinted.')
         for position in positions:
             if not 0 <= position < len(target_player.hand):
-                raise HanabiIndexException(position,
-                                           'no such card; position out of range')
+                errstr = f'no such card; position out of range.\n' \
+                         f'Expected integer between 1 and {len(target_player.hand)}, inclusive.'
+                raise HanabiIndexException(position, errstr)
         if len(positions) != len(set(positions)):
             raise HanabiSimException('Duplicate positions specified.')
+
+        player_index = self.game.players.index(target_player)
 
         new_state = self.game.copy()
         new_state.hints -= 1
         new_state.previous_state = self.game
-        player = new_state.get_player(player_input)
+        player = new_state.get_player(player_index)
         try: 
             player.hand = player.hand.process_hint(positions, hint, new_state.round, self.name)
         except HanabiIndexException as e:
-            e.args = (e.args[0] + '\nThe card:\n' + str(player.hand[e.index]),)
             raise e
         new_state.advance_turn()
         if verbose: print(str(player))
@@ -694,12 +707,16 @@ class Player:
         if not isinstance(pos1, int) or not isinstance(pos2, int):
             raise ValueError(f'integers expected; got {pos1, pos2}')
         if not (0 <= pos1 < len(self.hand)):
-            raise HanabiIndexException(pos1, f'nonnegative integers less than hand size expected'\
-                                      '.  Hand size: {len(self.hand)}')
+            errstr = f'nonnegative integers not exceeding hand size '\
+                     f'expected; hand size: {len(self.hand)}.'
+            raise HanabiIndexException(pos1, errstr)
         if not (0 <= pos2 < len(self.hand)):
-            raise HanabiIndexException(pos2, f'nonnegative integers less than hand size expected'\                                       '.  Hand size: {len(self.hand)}')
+            errstr = f'nonnegative integers not exceeding hand size '\
+                     f'expected; hand size: {len(self.hand)}.'
+            raise HanabiIndexException(pos2, errstr)
         if pos1 == pos2:
             raise HanabiSimException(f'Identical integers given; no swap to make.')
+
         new_state = self.game.copy()
         player = new_state.get_player(self.game.players.index(self)) #get player in new state
         try: player.hand = player.hand.process_swap(pos1, pos2)
@@ -725,9 +742,11 @@ class Player:
         
          
  
-
 class HanabiRulesException(Exception):
-
+    """
+    Used when an action would break a rule of Hanabi.
+    Example: hinting oneself.
+    """
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -735,15 +754,28 @@ class HanabiRulesException(Exception):
         return f'{self.message}'
 
 class HanabiSimException(Exception):
-
+    """
+    Used when an action doesn't make sense in the context of
+    the current simulation.
+    Example: Discarding the red 5 when it is already played
+    """
     def __init__(self, *args):
         super().__init__(*args)
 
     def __str__(self):
         return f'{self.message}'
 
+#Useful when a problem occurs 
 class HanabiIndexException(Exception):
-
+    """
+    Used when an action doesn't make sense, and the action takes
+    place at a particular index in a hand which it is useful to
+    propagate upwards to functions which can print errors based on it.
+    Because indexing is different in the objects (0-based) and the
+    user interface (1-based), game objects should just raise these errors
+    with the index they understand and let the higher functions decide
+    how to handle them (usually by adding 1).
+    """
     def __init__(self, index, *args):
         super().__init__(*args)
         self.index = index

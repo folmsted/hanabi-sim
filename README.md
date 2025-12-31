@@ -9,7 +9,7 @@ Usage:
 
 You can specify `-o <outfile>` to record the commands to a file.  Similarly, use `-i <infile>` to load the commands from a file.  There is a `-v` option which causes hanabi-sim to automatically print the hand of the relevant player after an action is taken.
 
-This will drop the user into a cli-like tool which will allow him to specify the players (in order) and their preferred mode of hand management (how is a card replaced when it is played: is the card inserted at the right, shifting other cards left or on the right, shifting other cards left; or is the card inserted in the place of the old card).  After players are established, the user inputs the hints, plays, and discards of the Hanabi game into the program, or queries it for information.  A few examples:
+This will drop the user into a cli-like tool which will allow him to specify the players (in order) and their preferred mode of hand management (how is a card replaced when it is played: is the card inserted at the right, shifting other cards left; or on the right, shifting other cards left; or is the card inserted in the place of the old card).  After players are established, the user inputs the hints, plays, and discards of the Hanabi game into the program, or queries it for information.  A few examples:
 
 h 1 3 4 b (the turn player gives a hint to player 1 that his 3 and 4 positions are blue)
 
