@@ -73,6 +73,9 @@ def handle_printing(choice, game):
             try: player = util.resolve_player(player_request, game)
             except (KeyError, IndexError) as e: return e.args[0]
             text = str(player)
+        case ['i', *args] | ['info', *args]:
+            #TODO add options for more specific printing
+            text = str(game.turns_taken)
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show"'
     return text

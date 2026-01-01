@@ -180,7 +180,7 @@ class GameState:
     """
     A representation of the current public information available in a game of Hanabi
     """
-    STARTING_MISFIRES, MAX_MISFIRES = 0, 2
+    STARTING_MISFIRES, MAX_MISFIRES = 0, 2 #2 misfires => OK; 3 misfires => lose
     STARTING_HINTS, MAX_HINTS = 8, 8
     STARTING_DISCARD = {color : [] for color in (Color)}
     STARTING_PLAYER_UP = 0
@@ -188,7 +188,7 @@ class GameState:
     MIN_PLAYERS, MAX_PLAYERS = 2, 5
     HAND_SIZES = {2:5, 3:5, 4:4, 5:4}
     
-    default_players = ['Player 0', 'Player 1', 'Player 2']
+    default_players = ['Player0', 'Player1', 'Player2']
     default_protocols = ['in_place', 'left_shift', 'right_shift']
 
     def __init__(self, players=default_players, protocols=default_protocols):
@@ -211,6 +211,7 @@ class GameState:
         self.num_in_deck = len(self.outstanding_cards) - sum([len(p.hand) for p in self.players])
         self.over = False
         self.previous_state = None
+        self.turns_taken = []
 
     def represent_play(self):
         return str(self.play)
@@ -245,6 +246,7 @@ class GameState:
         cpy.num_in_deck = self.num_in_deck
         cpy.over = self.over
         cpy.previous_state = self.previous_state
+        cpy.turns_taken = self.turns_taken.copy()
         return cpy
 
     def __str__(self):
@@ -438,47 +440,25 @@ class UnknownCard:
                self.turn_updated == other.turn_updated   and \
                self.previous_states == other.previous_states
 
+class RealizedCard:
+    """
+    A card of known value or number because it was played or discarded.
+    """
+    def __init__(self, identity, unrealized_state):
+        self.identity = identity #Card object
+        self.unrealized_state = unrealized_state #UnknownCard object
+
+    def __eq__(self, other):
+        if not isinstance(other, RealizedCard): return False
+        return self.identity == other.identity and \
+               self.unrealized_state == other.unrealized_state
+
 class Hand:
     """
     A collection of the cards in the hand of a player
     """
     def __init__(self, HAND_SIZE):
         self.hand = [UnknownCard(0, '-') for _ in range(HAND_SIZE)]
-
-    def __getitem__(self, item):
-        return self.hand[item]
-
-    def __str__(self):
-        colorstrs = [
-            ''.join([
-                '' if color not in card.colors else
-                guess_text(color, color.name[0]) if color == card.color_guess else
-                style_text(color, color.name[0]) for color in Color
-            ]) for card in self.hand
-        ]
-        numberstrs = [
-            ''.join([
-                guess_text(number, str(number)) if number == card.number_guess
-                else str(number) for number in card.numbers
-
-            ]) for card in self.hand
-        ]
-        rounds_drawn        = [f'RD: {card.round_drawn}'   for card in self.hand]
-        rounds_last_updated = [f'RU: {card.round_updated}' for card in self.hand]
-        turns_last_updated  = [f'TU: {card.turn_updated}'  for card in self.hand]
-        rep = tabulate([rounds_drawn,
-                       colorstrs,
-                       rounds_last_updated,
-                       turns_last_updated,
-                       numberstrs], \
-                       tablefmt='pretty'
-        )
-        return rep
-
-    def copy(self):
-        cpy = Hand(len(self.hand))
-        cpy.hand = [card for card in self.hand] #UnknownCard immutable; shallow copy safe 
-        return cpy
 
     def process_hint(self, positions, hint, r, t):
         """
@@ -551,7 +531,46 @@ class Hand:
 
     def __len__(self):
         return len(self.hand)
-            
+
+    def __eq__(self, other):
+        if not isinstance(other, Hand): return False
+        return self.hand == other.hand
+
+    def __getitem__(self, item):
+        return self.hand[item]
+
+    def __str__(self):
+        colorstrs = [
+            ''.join([
+                '' if color not in card.colors else
+                guess_text(color, color.name[0]) if color == card.color_guess else
+                style_text(color, color.name[0]) for color in Color
+            ]) for card in self.hand
+        ]
+        numberstrs = [
+            ''.join([
+                guess_text(number, str(number)) if number == card.number_guess
+                else str(number) for number in card.numbers
+
+            ]) for card in self.hand
+        ]
+        rounds_drawn        = [f'RD: {card.round_drawn}'   for card in self.hand]
+        rounds_last_updated = [f'RU: {card.round_updated}' for card in self.hand]
+        turns_last_updated  = [f'TU: {card.turn_updated}'  for card in self.hand]
+        rep = tabulate([rounds_drawn,
+                       colorstrs,
+                       rounds_last_updated,
+                       turns_last_updated,
+                       numberstrs], \
+                       tablefmt='pretty'
+        )
+        return rep
+
+    def copy(self):
+        cpy = Hand(len(self.hand))
+        cpy.hand = [card for card in self.hand] #UnknownCard immutable; shallow copy safe 
+        return cpy
+
 
 class Player:
     """
@@ -583,6 +602,7 @@ class Player:
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
         new_state.discard = new_state.discard.add(card)
+        new_state.turns_taken.append(('discard', RealizedCard(card, self.hand[position])))
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         except ValueError:
             errstr = f'The card you specified, {card}, is exhausted '\
@@ -618,14 +638,16 @@ class Player:
             raise HanabiIndexException(position, errstr)
         new_state = self.game.copy()
         #successful play
-        if (card.number == new_state.play[card.color].number + 1): #TODO play
+        if (card.number == new_state.play[card.color].number + 1):
+            new_state.turns_taken.append(('play', RealizedCard(card, self.hand[position])))
             new_state.play = new_state.play.add(card)
             if card.number == MAX_CARD_VALUE:
                 new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
-                if all([c.number == MAX_CARD_VALUE for c in new_state.play.values()]):#TODO play
+                if all([c.number == MAX_CARD_VALUE for c in new_state.play.values()]):
                     new_state.over = True
         #unsuccessful play
         else:
+            new_state.turns_taken.append(('misfire', RealizedCard(card, self.hand[position])))
             new_state.misfires += 1
             new_state.over = new_state.misfires > new_state.MAX_MISFIRES
             new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
@@ -667,12 +689,11 @@ class Player:
         if len(positions) != len(set(positions)):
             raise HanabiSimException('Duplicate positions specified.')
 
-        player_index = self.game.players.index(target_player)
-
         new_state = self.game.copy()
         new_state.hints -= 1
         new_state.previous_state = self.game
-        player = new_state.get_player(player_index)
+        new_state.turns_taken.append(('hint', target_player.name, isinstance(hint, int), positions))
+        player = new_state.get_player(self.game.players.index(target_player))
         try: 
             player.hand = player.hand.process_hint(positions, hint, new_state.round, self.name)
         except HanabiIndexException as e:
