@@ -67,7 +67,7 @@ def get_players(setup_choices, outfile, color_picker):
 
         invalid = True
         while (invalid):
-            protocol = setup_choices.pop(0) if setup_choices else \
+            protocol = setup_choices.pop(0).strip() if setup_choices else \
                        input(style_text(next(color_picker),\
                            f'Enter the replenishment protocol (in place|left shift|right shift)'\
                            f' for player {len(players) + 1} {playername}:'))

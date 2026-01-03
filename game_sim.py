@@ -30,7 +30,7 @@ def handle_help(choice):
            text = util.help_guess
         case ['undo'] | ['u']:
            text = util.help_undo
-        case ['swap']:
+        case ['swap']: #TODO 'w' as a short form?
            text = util.help_swap
         case ['quit'] | ['q']:
            text = util.help_quit
@@ -73,9 +73,70 @@ def handle_printing(choice, game):
             try: player = util.resolve_player(player_request, game)
             except (KeyError, IndexError) as e: return e.args[0]
             text = str(player)
-        case ['i', *args] | ['info', *args]:
-            #TODO add options for more specific printing
-            text = str(game.turns_taken)
+        case ['info', *args] | ['i', *args]:
+            match args:
+                case ['play'] | ['p']:
+                    actions = game.get_actions_of_type(PlayAction)
+                    header = ['round', 'player', 'card']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         action.card
+                        ] for i, j, action in actions
+                    ]
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case ['discard'] | ['d']:
+                    actions = game.get_actions_of_type(DiscardAction)
+                    header = ['round', 'player', 'card']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         action.card
+                        ] for i, j, action in actions
+                    ]
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case ['misfire'] | ['m']:
+                    actions = game.get_actions_of_type(MisfireAction)
+                    header = ['round', 'player', 'card']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         action.card
+                        ] for i, j, action in actions
+                    ]
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                    text = actions
+                case ['hint'] | ['h']:
+                    actions = game.get_actions_of_type(HintAction)
+                    header = ['round', 'giver', 'receiver', 'cards', 'hint']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         game.players[action.targetplayer_index].name,
+                         ', '.join([str(p + 1) for p in action.positions]),
+                         action.hint
+                        ] for i, j, action in actions
+                    ]
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case [player_request] | [player_request]:
+                    try: player = util.resolve_player(player_request, game)
+                    except (KeyError, IndexError) as e: return e.args[0]
+                    actions = game.get_player_actions(game.players.index(player))
+                    header = ['turn', f'{player.name} action']
+                    rows = [
+                        [i + 1,
+                        f'Played {a.card}'    if isinstance(a, PlayAction)    else
+                        f'Discarded {a.card}' if isinstance(a, DiscardAction) else
+                        f'Misfired {a.card}'  if isinstance(a, MisfireAction) else
+                        f'Hinted {game.players[a.targetplayer_index].name} about '\
+                        f'{a.hint} at positions {", ".join([str(p + 1) for p in a.positions])}.'
+                        if isinstance(a, HintAction)
+                        else '?!? Should never happen!'
+                        ] for i, a in enumerate(actions)
+                    ]
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case _:
+                    text = 'Should not happen'
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show"'
     return text
