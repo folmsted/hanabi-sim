@@ -72,6 +72,30 @@ class Card:
             return False
         return self.color == other.color and self.number == other.number
 
+    def __lt__(self, other):
+        if not isinstance(self, Card):
+            raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
+        return self.color.value  * len(Color) + self.number < \
+               other.color.value * len(Color) + other.number
+
+    def __gt__(self, other):
+        if not isinstance(self, Card):
+            raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
+        return self.color.value  * len(Color) + self.number > \
+               other.color.value * len(Color) + other.number
+
+    def __le__(self, other):
+        if not isinstance(self, Card):
+            raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
+        return self.color.value  * len(Color) + self.number <= \
+               other.color.value * len(Color) + other.number
+
+    def __ge__(self, other):
+        if not isinstance(self, Card):
+            raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
+        return self.color.value  * len(Color) + self.number >= \
+               other.color.value * len(Color) + other.number
+
     def copy(self):
         return self
 
