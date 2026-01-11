@@ -17,7 +17,11 @@ p 3 1yellow (the turn player plays his card at position 3, which turned out to b
 
 d 1 5r (the turn player discards his card at position 1, which turned out to be the red 5)
 
+s h janos (show the current state of the hand of the player whose name starts with "janos")
+
 Note that by convention, players are numbered 1, ..., n (not 0, ... n - 1) and that cards in a player's hand are numbered 1, ..., n from left to right, _from that player's perspective_.  So your card at position 1 is your leftmost card.  If you hold 5 cards, your position 5 card is your rightmost.
+
+There is an in-program help feature, accessible with the "help" command.  The intent is that this will be sufficient for a user who understands the rules of hanabi to understand and use hanabi-sim.  To the extent that the provided help is ambiguous or incomplete (but not to the extent that it is lengthy) it is wrong and needs to be corrected.  Suggestions to this effect will be considered.
 
 Written and tested (to the extent it is tested) on Python 3.13.5
 
