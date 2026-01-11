@@ -18,8 +18,14 @@ def handle_help(choice):
            text = util.help_about
         case ['help'] | ['?']:
            text = util.help_help
-        case ['show'] | ['s']:
-           text = util.help_show
+        case ['show', *args] | ['s', *args]:
+           match args:
+               case ['info'] | ['i']:
+                   text = util.help_show_info
+               case []:
+                   text = util.help_show
+               case _:
+                   text = f'Unrecognized arguments {" ".join(args)}'
         case ['play'] | ['p']:
            text = util.help_play
         case ['hint'] | ['h']:
@@ -30,7 +36,7 @@ def handle_help(choice):
            text = util.help_guess
         case ['undo'] | ['u']:
            text = util.help_undo
-        case ['swap']:
+        case ['swap']: #TODO 'w' as a short form?
            text = util.help_swap
         case ['quit'] | ['q']:
            text = util.help_quit
@@ -43,7 +49,7 @@ def handle_about(options):
     return util.help_about
 
 #The logic for the "show" command
-def handle_printing(choice, game):
+def handle_show(choice, game):
     match choice:
         case []:
             text = 'This command requires further arguments; try "help show"'
@@ -73,8 +79,92 @@ def handle_printing(choice, game):
             try: player = util.resolve_player(player_request, game)
             except (KeyError, IndexError) as e: return e.args[0]
             text = str(player)
+        case ['info', *args] | ['i', *args]:
+            match args:
+                case ['play', *sort] | ['p', *sort]:
+                    actions = game.get_actions_of_type(PlayAction)
+                    header = ['index', 'round', 'player', 'card']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         action.card
+                        ] for i, j, action in actions
+                    ]
+                    try: util.sort_stats_rows1(rows, sort)
+                    except HanabiSimException as e: return e.args[0]
+                    for i, row in enumerate(rows):
+                        row.insert(0, i + 1)
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case ['discard', *sort] | ['d', *sort]:
+                    actions = game.get_actions_of_type(DiscardAction)
+                    header = ['index', 'round', 'player', 'card']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         action.card
+                        ] for i, j, action in actions
+                    ]
+                    try: util.sort_stats_rows1(rows, sort)
+                    except HanabiSimException as e: return e.args[0]
+                    for i, row in enumerate(rows):
+                        row.insert(0, i + 1)
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case ['misfire', *sort] | ['m', *sort]:
+                    actions = game.get_actions_of_type(MisfireAction)
+                    header = ['index', 'round', 'player', 'card']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         action.card
+                        ] for i, j, action in actions
+                    ]
+                    try: util.sort_stats_rows1(rows, sort)
+                    except HanabiSimException as e: return e.args[0]
+                    for i, row in enumerate(rows):
+                        row.insert(0, i + 1)
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case ['hint', *sort] | ['h', *sort]:
+                    actions = game.get_actions_of_type(HintAction)
+                    header = ['index', 'round', 'giver', 'receiver', 'cards', 'hint']
+                    rows = [
+                        [i + 1,
+                         game.players[j].name,
+                         game.players[action.targetplayer_index].name,
+                         ', '.join([str(p + 1) for p in action.positions]),
+                         action.hint
+                        ] for i, j, action in actions
+                    ]
+                    try: util.sort_stats_rows2(rows, sort)
+                    except HanabiSimException as e: return e.args[0]
+                    for i, row in enumerate(rows):
+                        row.insert(0, i + 1)
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case [player_request, *sort] | [player_request, *sort]:
+                    try: player = util.resolve_player(player_request, game)
+                    except (KeyError, IndexError) as e: return e.args[0]
+                    actions = game.get_player_actions(game.players.index(player))
+                    header = ['index', 'round', f'{player.name} action']
+                    rows = [
+                        [i + 1,
+                        f'Played {a.card}'    if isinstance(a, PlayAction)    else
+                        f'Discarded {a.card}' if isinstance(a, DiscardAction) else
+                        f'Misfired {a.card}'  if isinstance(a, MisfireAction) else
+                        f'Hinted {game.players[a.targetplayer_index].name} about '\
+                        f'{a.hint} at positions {", ".join([str(p + 1) for p in a.positions])}.'
+                        if isinstance(a, HintAction)
+                        else '?!? Should never happen!'
+                        ] for i, a in enumerate(actions)
+                    ]
+                    #TODO this sorting option is garbage.  Make it better somehow
+                    try: util.sort_stats_rows3(rows, sort)
+                    except HanabiSimException as e: return e.args[0]
+                    for i, row in enumerate(rows):
+                        row.insert(0, i + 1)
+                    text = tabulate(rows, headers=header, tablefmt='pretty')
+                case _:
+                    text = 'You must specify what information to show; try "help show".'
         case [*args]:
-            text = f'Unrecognized arguments: {", ".join(args)}; try "help show"'
+            text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text
 
 #The logic for the "play" command
@@ -261,7 +351,7 @@ if __name__ == '__main__':
             case ['about', *options] | ['a', *options]:
                 print(handle_about(options))
             case ['show', *options] | ['s', *options]:
-                print(handle_printing(options, game))
+                print(handle_show(options, game))
             case ['play', *options] | ['p', *options]:
                 game, text = handle_play(options, game, verbose=verbose)
                 print(text)
@@ -308,7 +398,7 @@ if __name__ == '__main__':
         if (choice[0] == 'help' or choice[0] == '?'):
             print(handle_help(choice[1:]))
         if (choice[0] == 'show' or choice[0] == 's'):
-            print(handle_printing(choice[1:], game))
+            print(handle_show(choice[1:], game))
         if (choice[0] == 'quit' or choice[0] == 'q'):
             break
 
