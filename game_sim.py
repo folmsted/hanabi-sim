@@ -1,9 +1,10 @@
-from game_objects import *
-import util
 from enum import Enum
 import random
 import readline
 import argparse
+
+import util
+from game_objects import *
 
 def handle_help(choice):
     """
@@ -162,7 +163,7 @@ def handle_show(choice, game):
                         row.insert(0, i + 1)
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case _:
-                    text = 'You must specify what information to show; try "help show".'
+                    text = 'You must specify what information to show; try "help show info".'
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text
@@ -389,9 +390,14 @@ if __name__ == '__main__':
     print('Game is over')
     choice = ''
     while (True):
-        choice = input(style_text(next(color_picker),\
+        try:
+            choice = input(style_text(next(color_picker),\
                        'You may inquire about the game, but not make plays,'\
                        ' discards, or hints (\'q\' exits):'))
+        except (KeyboardInterrupt, EOFError):
+            print('\nProgram terminated by user.')
+            exit(0)
+
         choice = choice.split()
         if (not choice):
             continue

@@ -35,6 +35,7 @@ PROTOCOL_MAP = {
 }
 
 COMMENT_START = '//'
+PLAYERNAME_MAX_LENGTH = 16
 
 def trim_comment(string, comment_delimiter=COMMENT_START):
     """
@@ -55,10 +56,20 @@ def get_players(setup_choices, outfile, color_picker):
     while (not done):
         playername = setup_choices.pop(0).strip() if setup_choices else \
                      input(style_text(next(color_picker),
-                         f'Enter player {len(players) + 1} name, or nothing to proceed to game:'))
+                           f'Enter player {len(players) + 1} name (16 characters max, '\
+                           f'no spaces), or nothing to proceed to game:'
+                     ))
         if outfile:
             outfile.write(playername + '\n')
         playername = trim_comment(playername, COMMENT_START).strip()
+        #check if name too long
+        if len(playername) > PLAYERNAME_MAX_LENGTH:
+            print(f'Player names must be no more than 16 characters; yours {len(playername)}.')
+            continue
+        #check whether any character is whitespace
+        if True in [c in ' \t\n\r\x0b\x0c' for c in playername]:
+            print('Player names must not have any whitespace.')
+            continue
         if (not playername and len(players) < GameState.MIN_PLAYERS):
             print(f'The game needs at least {GameState.MIN_PLAYERS} players!')
             continue
@@ -70,10 +81,28 @@ def get_players(setup_choices, outfile, color_picker):
             protocol = setup_choices.pop(0).strip() if setup_choices else \
                        input(style_text(next(color_picker),\
                            f'Enter the replenishment protocol (in place|left shift|right shift)'\
-                           f' for player {len(players) + 1} {playername}:'))
+                           f' for player {len(players) + 1} {playername} ("?" for help):'))
             if outfile:
                 outfile.write(protocol + '\n')
             protocol = trim_comment(protocol).strip()
+            if protocol == '?':
+                print(
+                    'A player\'s replenishment protocol is how he replaces a card removed from '\
+                    'his hand.\n"in place" means the new card takes the place of the old one;\n'\
+                    '"left shift" means that all cards are shifted left as much as possible\n'\
+                    'and the new card is inserted at the rightmost position; and\n'\
+                    '"right shift" means that all cards are shifted right as much as possible,\n'\
+                    'and the new card is inserted at position 1, the leftmost position.\n'\
+                    'For example, if a player holding 5 cards played his position 3 card:\n'\
+                    'a left-shifter would move cards 4 and 5 to positions 3 and 4,\n'\
+                    'and the new card would go in position 5; and\n'\
+                    'a right-shifter would move cards 1 and 2 to positions 2 and 3,\n'\
+                    'and the new card would go in position 1; and\n'\
+                    'an in-place replacer would place the new card in position 3,\n'\
+                    'and he would move no other cards.'
+
+                )
+                continue
             try:
                 protocols.append(PROTOCOL_MAP[protocol.lower()])
                 players.append(playername)
