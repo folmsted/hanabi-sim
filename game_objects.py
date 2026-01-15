@@ -75,26 +75,26 @@ class Card:
     def __lt__(self, other):
         if not isinstance(self, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * MAX_CARD_VALUE + self.number < \
-               other.color.value * MAX_CARD_VALUE + other.number
+        return self.color.value  * len(Color) + self.number < \
+               other.color.value * len(Color) + other.number
 
     def __gt__(self, other):
         if not isinstance(self, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * MAX_CARD_VALUE + self.number > \
-               other.color.value * MAX_CARD_VALUE + other.number
+        return self.color.value  * len(Color) + self.number > \
+               other.color.value * len(Color) + other.number
 
     def __le__(self, other):
         if not isinstance(self, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * MAX_CARD_VALUE + self.number <= \
-               other.color.value * MAX_CARD_VALUE + other.number
+        return self.color.value  * len(Color) + self.number <= \
+               other.color.value * len(Color) + other.number
 
     def __ge__(self, other):
         if not isinstance(self, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * MAX_CARD_VALUE + self.number >= \
-               other.color.value * MAX_CARD_VALUE + other.number
+        return self.color.value  * len(Color) + self.number >= \
+               other.color.value * len(Color) + other.number
 
     def copy(self):
         return self
@@ -572,7 +572,7 @@ class GameState:
         if (len(protocols) != self.num_players):
             raise HanabiSimException(f'There must be exactly one protocol per player (players: '\
                                      f'{self.num_players}; protocols: {len(protocols)})')
-        self.players = [Player(name, self.HAND_SIZES[self.num_players], protocol) \
+        self.players = [Player(name, self.HAND_SIZES[self.num_players], self, protocol) \
                         for name, protocol in zip(players, protocols)]
         self.outstanding_cards = OutstandingCards()
         self.num_in_deck = len(self.outstanding_cards) - sum([len(p.hand) for p in self.players])
@@ -621,8 +621,10 @@ class GameState:
         ]
 
     def copy(self):
-        cpy = GameState()
-        cpy.players = [p.copy() for p in self.players]
+        players_copy = [p.copy() for p in self.players]
+        cpy = GameState([None] * self.num_players, [None] * self.num_players)
+        for p in players_copy:
+            p.game = cpy
         cpy.misfires = self.misfires
         cpy.hints = self.hints
         cpy.play = self.play
@@ -630,6 +632,7 @@ class GameState:
         cpy.player_up = self.player_up
         cpy.round = self.round
         cpy.num_players = self.num_players
+        cpy.players = players_copy
         cpy.outstanding_cards = self.outstanding_cards # OutstandingCards immutable
         cpy.num_in_deck = self.num_in_deck
         cpy.over = self.over
@@ -659,7 +662,7 @@ class GameState:
             if (len(s) == 1): return s.pop()
             else:
                 raise KeyError(f"Specifier {specifier} failed to uniquely identify a player; "\
-                               f"found [{', '.join([p.name for p in s])}] (\"show state\" for players)")
+                               f"found [{',  '.join([p.name for p in s])}] (\"show state\" for players)")
         raise KeyError(f'Specified player {specifier} not found among player list.')
  
     def advance_turn(self):
@@ -676,13 +679,14 @@ class Player:
         self.name = name
         self.hand = Hand(hand_size)
         self.replenishment_protocol = replenishment_protocol
+        self.game = game
 
-    def perform_discard(self, position, card, game, verbose=False):
+    def perform_discard(self, position, card, verbose=False):
         """
         Attempt to perform a discard, updating state of the discarded cards, hints,
         and hand of the player performing the discard.
         """
-        if (game.hints == game.MAX_HINTS):
+        if (self.game.hints == self.game.MAX_HINTS):
             raise HanabiRulesException('Cannot discard while hints are at maximum!')
         if (not 0 <= position < len(self.hand)):
             errstr = 'the position given was not in range.\n'\
@@ -693,7 +697,7 @@ class Player:
             errstr = f'The card identity {card} which you gave was not possible '\
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
-        new_state = game.copy()
+        new_state = self.game.copy()
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
         new_state.discard = new_state.discard.add(card)
@@ -704,19 +708,20 @@ class Player:
                      f'by prior plays and discards. (see "show outstanding")'
             raise HanabiSimException(errstr)
         #Replenishment
-        player = new_state.get_player(game.player_up)
+        player = new_state.get_player(self.game.player_up)
         if (new_state.num_in_deck > 0):
+            player = new_state.get_player(self.game.player_up)
             new_state.num_in_deck -= 1
             player.hand = player.hand.replace_card(new_state.round, position, player)
         else:
             player.hand = player.hand.copy()
             del player.hand.hand[position]
-        new_state.previous_state = game
+        new_state.previous_state = self.game
         new_state.advance_turn()
         if verbose: print(str(player))
         return new_state
 
-    def perform_play(self, position, card, game, verbose=False):
+    def perform_play(self, position, card, verbose=False):
         """
         Attempt to perform a play, updating the played cards or discarded cards (as applicable)
         and the hand of the player performing the discard.
@@ -730,7 +735,7 @@ class Player:
             errstr = f'The card identity {card} which you gave was not possible '\
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
-        new_state = game.copy()
+        new_state = self.game.copy()
         #successful play
         if (card.number == new_state.play[card.color].number + 1):
             new_state.turns_taken.append(PlayAction(card, self.hand[position]))
@@ -752,23 +757,23 @@ class Player:
             errstr = f'The card you specified, {card}, is exhausted '\
                      f'by prior plays and discards. (see "show outstanding")' 
             raise HanabiSimException(errstr)
-        player = new_state.get_player(game.players.index(self)) #get player in new state
+        player = new_state.get_player(self.game.players.index(self)) #get player in new state
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
             player.hand = player.hand.replace_card(new_state.round, position, player)
         else:
             player.hand = player.hand.copy()
             del player.hand.hand[position]
-        new_state.previous_state = game
+        new_state.previous_state = self.game
         new_state.advance_turn()
         if verbose: print(str(player))
         return new_state
 
-    def perform_hint(self, target_player, positions, hint, game, verbose=False):
+    def perform_hint(self, target_player, positions, hint, verbose=False):
         """
         Attempt to perform a hint, updating the game state and the hand of the hinted player.
         """
-        if game.hints <= 0:
+        if self.game.hints <= 0:
             raise HanabiRulesException('Cannot give a hint while no hints remain!')
         if self == target_player:
             raise HanabiRulesException('One cannot give a hint to oneself!')
@@ -783,16 +788,16 @@ class Player:
         if len(positions) != len(set(positions)):
             raise HanabiSimException('Duplicate positions specified.')
 
-        new_state = game.copy()
+        new_state = self.game.copy()
         new_state.hints -= 1
-        new_state.previous_state = game
-        player = new_state.get_player(game.players.index(target_player))
+        new_state.previous_state = self.game
+        player = new_state.get_player(self.game.players.index(target_player))
         try: 
             player.hand = player.hand.process_hint(positions, hint, new_state.round, self.name)
         except HanabiIndexException as e:
             raise e
         new_state.advance_turn()
-        hint = HintAction(game.players.index(target_player), hint,\
+        hint = HintAction(self.game.players.index(target_player), hint,\
                           positions, target_player.hand, player.hand)
         new_state.turns_taken.append(hint)
         if verbose: print(str(player))
@@ -800,22 +805,22 @@ class Player:
 
     #TODO guess functionality may not be in line with the intended use of hanabi-sim
     #decide whether it should be disabled
-    def perform_guess(self, position, guess, game, verbose=False):
+    def perform_guess(self, position, guess, verbose=False):
         """
         Apply the player's guess of color or number to a card.
         This does not consume a player's turn; it just updates the card with the guess.
         """
         if not isinstance(position, int) or not (0 <= position < len(self.hand)):
             raise HanabiIndexException(position, f'Invalid position ({position}) given.')
-        new_state = game.copy()
-        player = new_state.get_player(game.players.index(self)) #get player in new state
+        new_state = self.game.copy()
+        player = new_state.get_player(self.game.players.index(self)) #get player in new state
         try: player.hand = player.hand.process_guess(position, guess)
         except (HanabiSimException, HanabiIndexException) as e: raise e
-        new_state.previous_state = game
+        new_state.previous_state = self.game
         if verbose: print(str(player))
         return new_state
 
-    def perform_swap(self, pos1, pos2, game, verbose=False):
+    def perform_swap(self, pos1, pos2, verbose=False):
         """
         Swap two cards in a players hand.
         This does not consume the player's turn; it just updates the order
@@ -834,17 +839,18 @@ class Player:
         if pos1 == pos2:
             raise HanabiSimException(f'Identical integers given; no swap to make.')
 
-        new_state = game.copy()
-        player = new_state.get_player(game.players.index(self)) #get player in new state
+        new_state = self.game.copy()
+        player = new_state.get_player(self.game.players.index(self)) #get player in new state
         try: player.hand = player.hand.process_swap(pos1, pos2)
         except HanabiIndexException as e: raise e
-        new_state.previous_state = game
+        new_state.previous_state = self.game
         if verbose: print(str(player))
         return new_state
 
     def copy(self):
-        cpy = Player(self.name, 0, self.replenishment_protocol)
+        cpy = Player(self.name, 0, self.game, self.replenishment_protocol)
         cpy.hand = self.hand.copy()
+        cpy.game = self.game
         return cpy
 
     def __str__(self):
