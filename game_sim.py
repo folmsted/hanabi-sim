@@ -183,7 +183,7 @@ def handle_play(choice, game, verbose=False):
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
     try:
-        new_state = player.perform_play(position - 1, card, verbose=verbose)
+        new_state = player.perform_play(position - 1, card, game, verbose=verbose)
     except HanabiRulesException:
         return game, e.args[0]
     except HanabiSimException as e:
@@ -224,7 +224,7 @@ def handle_hint(choice, game, verbose=False):
         return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
     #do the hint
     try:
-        new_game_state = player.perform_hint(target_player, positions, hint, verbose=verbose)
+        new_game_state = player.perform_hint(target_player, positions, hint, game, verbose=verbose)
     except (HanabiRulesException, HanabiSimException) as e:
         return game, e.args[0]
     except HanabiIndexException as e:
@@ -246,7 +246,7 @@ def handle_discard(choice, game, verbose=False):
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
     try:
-        new_game_state = player.perform_discard(position - 1, card, verbose=verbose)
+        new_game_state = player.perform_discard(position - 1, card, game, verbose=verbose)
     except HanabiRulesException as e:
         if e.args[0]: return (game, e.args[0])
         return (game, f'Cannot discard position {position}; no such card')
@@ -272,7 +272,7 @@ def handle_guess(choice, game, verbose=False):
     try: position = int(position)
     except ValueError: return game, f'Invalid position; expected number 1 to 5; yours: {position}'
     #apply the guess
-    try: new_state = player.perform_guess(position - 1, guess, verbose=verbose)
+    try: new_state = player.perform_guess(position - 1, guess, game, verbose=verbose)
     except HanabiSimException as e: return game, e.args[0]
     except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
     return new_state, 'Success' 
@@ -292,7 +292,7 @@ def handle_swap(choice, game, verbose=False):
     except (ValueError, IndexError, KeyError) as e: return game, e.args[0]
     try: index1, index2 = int(index1), int(index2)
     except ValueError: return game, f'Integers expected as indices; yours: {index1, index2}'
-    try: new_state = player.perform_swap(index1 - 1, index2 - 1, verbose=verbose)
+    try: new_state = player.perform_swap(index1 - 1, index2 - 1, game, verbose=verbose)
     except (ValueError, HanabiSimException) as e:
         return game, e.args[0]
     except HanabiIndexException as e:
@@ -329,6 +329,7 @@ if __name__ == '__main__':
         players, protocols = util.get_players(setup_choices, outfile, color_picker)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
+        if outfile: outfile.close()
         exit(0)
     game = GameState(players, protocols)
 
@@ -340,6 +341,7 @@ if __name__ == '__main__':
                      input(style_text(next(color_picker), prompt))
         except (KeyboardInterrupt, EOFError):
             print('\nProgram terminated by user.')
+            if outfile: outfile.close()
             exit(0)
         if outfile:
             outfile.write(choice + '\n')
