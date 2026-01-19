@@ -5,16 +5,18 @@ import argparse
 from enum import Enum
 
 STR_TO_COLOR_MAP = {
-    'b'      : Color.BLUE,
-    'blue'   : Color.BLUE,
-    'g'      : Color.GREEN,
-    'green'  : Color.GREEN,
-    'r'      : Color.RED,
-    'red'    : Color.RED,
-    'w'      : Color.WHITE,
-    'white'  : Color.WHITE,
-    'y'      : Color.YELLOW,
-    'yellow' : Color.YELLOW
+    'b'          : Color.BLUE,
+    'blue'       : Color.BLUE,
+    'g'          : Color.GREEN,
+    'green'      : Color.GREEN,
+    'r'          : Color.RED,
+    'red'        : Color.RED,
+    'w'          : Color.WHITE,
+    'white'      : Color.WHITE,
+    'y'          : Color.YELLOW,
+    'yellow'     : Color.YELLOW,
+    'm'          : Color.MULTICOLOR,
+    'multicolor' : Color.MULTICOLOR
 }
 
 PROTOCOL_MAP = {

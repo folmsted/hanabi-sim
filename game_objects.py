@@ -3,7 +3,7 @@ from tabulate import tabulate
 from colorama import Fore, Back, Style
 from bisect import insort
 from collections import defaultdict
-
+import random
 
 class Color(Enum):
     BLUE = 1
@@ -11,39 +11,67 @@ class Color(Enum):
     RED = 3
     WHITE = 4
     YELLOW = 5
-
+    MULTICOLOR = 6
+    
     def __str__(self):
         return style_text(self, self.name)
+
+
 
 MIN_CARD_VALUE = 1
 MAX_CARD_VALUE = 5
 CARD_FREQUENCIES = [3,2,2,2,1]
 
 PRINT_STYLE = {
-    Color.BLUE:   Fore.LIGHTBLUE_EX,
-    Color.RED:    Fore.LIGHTRED_EX,
-    Color.YELLOW: Fore.LIGHTYELLOW_EX,
-    Color.WHITE:  Fore.LIGHTWHITE_EX,
-    Color.GREEN:  Fore.GREEN
+    Color.BLUE:       Fore.LIGHTBLUE_EX,
+    Color.RED:        Fore.LIGHTRED_EX,
+    Color.YELLOW:     Fore.LIGHTYELLOW_EX,
+    Color.WHITE:      Fore.LIGHTWHITE_EX,
+    Color.GREEN:      Fore.GREEN,
+    Color.MULTICOLOR: Fore.MAGENTA
 }
 
 SUSPICION_STYLE = defaultdict(lambda: f'{Back.LIGHTWHITE_EX}{Fore.BLACK}') | {
-    Color.BLUE:   Back.BLUE, 
-    Color.RED:    Back.RED,
-    Color.YELLOW: f'{Back.LIGHTYELLOW_EX}{Fore.BLACK}',
-    Color.WHITE:  f'{Back.LIGHTWHITE_EX}{Fore.BLACK}',
-    Color.GREEN:  Back.GREEN
+    Color.BLUE:       Back.BLUE, 
+    Color.RED:        Back.RED,
+    Color.YELLOW:     f'{Back.LIGHTYELLOW_EX}{Fore.BLACK}',
+    Color.WHITE:      f'{Back.LIGHTWHITE_EX}{Fore.BLACK}',
+    Color.GREEN:      Back.GREEN,
+    Color.MULTICOLOR: Back.MAGENTA
 }
 
-def style_text(color, text):
+#A generator to randomly shuffle some reasonably legible colors and return them in that order forever, repeating when exhausted.
+def generate_color():
+    #Commented colors are harder to read; move pound signs to include additional colors 
+    colors =  ([
+                  Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
+                  Fore.MAGENTA, Fore.CYAN, #Fore.WHITE,
+                  Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
+                  Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
+                  Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
+              ])
+    random.shuffle(colors)
+    colors.pop() # delete one at random, for a little variety
+
+    i = 0
+    while (i < len(colors)):
+        yield colors[i]
+        i = (i + 1) % len(colors)
+
+multicolor_generator = generate_color()
+
+def style_text(color, text, deterministic = False):
     """
     color: a Color object or a valid colorama color
     text: arbitrary text to be colored
     """
-    if isinstance(color, Color):
-        return f'{PRINT_STYLE[color]}{text}{Style.RESET_ALL}'
-    else:
-        return f'{color}{text}{Style.RESET_ALL}'
+    match color:
+        case Color.MULTICOLOR if not deterministic:
+            return f'{"".join([next(multicolor_generator) + c for c in text])}{Style.RESET_ALL}'
+        case Color():
+            return f'{PRINT_STYLE[color]}{text}{Style.RESET_ALL}'
+        case _:
+            return f'{color}{text}{Style.RESET_ALL}'
 
 def guess_text(color, text):
     """
@@ -51,6 +79,14 @@ def guess_text(color, text):
     text: arbitrary text to be colored
     """
     return f'{SUSPICION_STYLE[color]}{text}{Style.RESET_ALL}'
+
+
+class HanabiRuleset:
+
+    def __init__(self, rainbow_enabled, rainbow_wild_hint, rainbow_wild_play):
+        self.rainbow_enabled = rainbow_enabled
+        self.rainbow_wild_hint = rainbow_wild_hint
+        self.rainbow_wild_play = rainbow_wild_play
 
 
 class Card:
@@ -105,8 +141,10 @@ class UnknownCard:
     A card whose identity is not certain; it may be restricted by hints which exclude
     certain colors or numbers from the card's possible identities.
     """
-    def __init__(self, round_drawn, turn_drawn):
-        self.colors = {color for color in (Color)}
+    def __init__(self, round_drawn, turn_drawn, rules):
+        if rules:
+            self.colors = {color for color in (Color)}
+            if not rules.rainbow_enabled: self.colors.discard(Color.MULTICOLOR)
         self.numbers = {*range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1)}
         self.round_drawn = round_drawn
         self.color_guess = None
@@ -114,12 +152,27 @@ class UnknownCard:
         self.round_updated, self.turn_updated = (round_drawn, turn_drawn)
         self.previous_states = []
 
-    def hint_color_positive(self, color, rnd, trn):
+    def hint_color_positive(self, color, rnd, trn, rules):
         """
         Update a card as a result of a color hint which mentions the card explicitly;
         for example, a hint which tells this card is blue.
         In this example, the proper response is to remove all possible colors except blue.
         """
+        if rules.rainbow_wild_hint:
+            if color == color.MULTICOLOR:
+                raise HanabiRulesException('Cannot hint Multicolor when in wild-hint mode.')
+            if not (color in self.colors or Color.MULTICOLOR in self.colors):
+                raise HanabiSimException(f'Inconsistent hints: color '\
+                                     f'{style_text(color, color.name)}'\
+                                     f' would disqualify all possible colors.\nThe card:\n'\
+                                     f'{str(self)}')
+            if self.colors <= {color, Color.MULTICOLOR}: return self #nothing to do
+            new_state = self.copy()
+            #remove all colors which aren't the hinted color or rainbow
+            new_state.colors = self.colors - (set(Color) - {color, Color.MULTICOLOR})
+            new_state.previous_states.append(self)
+            new_state.round_updated, new_state.turn_updated = (rnd, trn)
+            return new_state
         if (color not in self.colors):
             raise HanabiSimException(f'Inconsistent hints: color {style_text(color, color.name)}'\
                                      f' was previously ruled out for a hinted card.\nThe card:\n'\
@@ -131,12 +184,26 @@ class UnknownCard:
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
 
-    def hint_color_negative(self, color, rnd, trn):
+    def hint_color_negative(self, color, rnd, trn, rules):
         """
         Update a card as a result of a color hint which mentions only other cards;
         for example, a hint which tells another card card is red.
         In this case, the proper response is to update the card to disallow being red.
         """
+        if rules.rainbow_wild_hint:
+            if color == color.MULTICOLOR:
+                raise HanabiRulesException('Cannot hint Multicolor when in wild-hint mode.')
+            if not (color in self.colors or Color.MULTICOLOR in self.colors): return self #n.t.d.
+            new_state = self.copy()
+            new_state.colors = new_state.colors - {color, Color.MULTICOLOR}
+            if len(new_state.colors) == 0:
+                raise HanabiSimException(f'Inconsistent hints: color '\
+                                     f'{style_text(color, color.name)}'\
+                                     f' would disqualify all possible colors.\nThe card:\n'\
+                                     f'{str(self)}')
+            new_state.previous_states.append(self)
+            new_state.round_updated, new_state.turn_updated = (rnd, trn)
+            
         if (color not in self.colors): return self #nothing to do
         new_state = self.copy()
         new_state.colors.discard(color)
@@ -217,7 +284,7 @@ class UnknownCard:
         colorstr = ''.join([
             '' if color not in self.colors else
             guess_text(color, color.name[0]) if color == self.color_guess else
-            style_text(color, color.name[0]) for color in Color
+            style_text(color, color.name[0], deterministic=True) for color in Color
         ])
         #display all possible numbers; display the guess (if any) in a special style
         #Note we iterate on self.numbers which gives us the same order always
@@ -235,12 +302,12 @@ class UnknownCard:
         return rep
 
     def show_past_states(self):
-        fake_hand = Hand(0) #a bit of a hack, but we basically want the same representation
+        fake_hand = Hand(0, None) #a bit of a hack, but we basically want the same representation
         fake_hand.hand = [*self.previous_states, self]
         return str(fake_hand)
 
     def copy(self):
-        cpy = UnknownCard(self.round_drawn, self.turn_updated)
+        cpy = UnknownCard(self.round_drawn, self.turn_updated, None)
         cpy.colors = self.colors.copy()
         cpy.numbers = self.numbers.copy()
         cpy.color_guess = self.color_guess
@@ -287,10 +354,10 @@ class Hand:
     """
     A collection of the cards in the hand of a player
     """
-    def __init__(self, HAND_SIZE):
-        self.hand = [UnknownCard(0, '-') for _ in range(HAND_SIZE)]
+    def __init__(self, HAND_SIZE, rules):
+         if rules: self.hand = [UnknownCard(0, '-', rules) for _ in range(HAND_SIZE)]
 
-    def process_hint(self, positions, hint, r, t):
+    def process_hint(self, positions, hint, rules, r, t):
         """
         Update all cards in the hand according to a hint given.
         Positions which are given in the hint need to be updated positively
@@ -301,9 +368,11 @@ class Hand:
         new_hand = self.copy()
         for i, card in enumerate(self.hand):
             if isinstance(hint, Color):
+                if hint == Color.MULTICOLOR and not rules.rainbow_enabled:
+                    raise HanabiSimException('This game does not have multicolor cards.')
                 try: 
-                    new_hand.hand[i] = card.hint_color_positive(hint, r, t) if i in positions \
-                                       else card.hint_color_negative(hint, r, t)
+                    new_hand.hand[i] = card.hint_color_positive(hint, r, t, rules) if i in positions \
+                                       else card.hint_color_negative(hint, r, t, rules)
                 except HanabiSimException as e:
                     raise HanabiIndexException(i, *e.args)
             else:
@@ -314,7 +383,7 @@ class Hand:
                     raise HanabiIndexException(i, *e.args)
         return new_hand
 
-    def process_guess(self, position, guess):
+    def process_guess(self, position, guess, rules):
         try: card = self.hand[position]
         except IndexError: raise HanabiIndexException(position)
         if isinstance(guess, int):
@@ -322,6 +391,8 @@ class Hand:
                 raise HanabiSimException(f'Bad guess; number {number} already disqualified.')
             new_card_state = card.guess_number(guess)
         elif isinstance(guess, Color):
+            if guess == Color.MULTICOLOR and not rules.rainbow_enabled:
+                raise HanabiSimException('This game doe not have multicolor cards.')
             if guess not in card.colors:
                 raise HanabiSimException(f'Bad guess; color {style_text(color, color.name)} '
                                          f'already disqualified.')
@@ -337,7 +408,7 @@ class Hand:
         new_hand.hand[index1], new_hand.hand[index2] = new_hand[index2], new_hand[index1]
         return new_hand
 
-    def replace_card(self, cur_round, position, player):
+    def replace_card(self, cur_round, position, player, rules):
         """
         Remove a card in the hand and replace it according to the player's preferred mode
         of hand organization.
@@ -348,14 +419,14 @@ class Hand:
             case 'left_shift':
                 #If 1 is played, 2 becomes 1, 3 becomes 2, and so on, and the new card is n
                 del new_hand.hand[position]
-                new_hand.hand.append(UnknownCard(cur_round, player.name))
+                new_hand.hand.append(UnknownCard(cur_round, player.name, rules))
             case 'right_shift':
                 #The new card is 1; if n is played then 1 becomes 2, ... n - 1 becomes n
                 del new_hand.hand[position]
-                new_hand.hand.insert(0, UnknownCard(cur_round, player.name))
+                new_hand.hand.insert(0, UnknownCard(cur_round, player.name, rules))
             case 'in_place':
                 #The new card takes the place of the old card.  If 3 is played, the new card is 3
-                new_hand.hand[position] = UnknownCard(cur_round, player.name)
+                new_hand.hand[position] = UnknownCard(cur_round, player.name, rules)
             case _:
                 raise HanabiSimException('Illegal replenishment protocol')
         return new_hand
@@ -381,7 +452,7 @@ class Hand:
             ''.join([
                 '' if color not in card.colors else
                 guess_text(color, color.name[0]) if color == card.color_guess else
-                style_text(color, color.name[0]) for color in Color
+                style_text(color, color.name[0], deterministic=True) for color in Color
             ]) for card in self.hand
         ]
         numberstrs = [
@@ -404,7 +475,7 @@ class Hand:
         return rep
 
     def copy(self):
-        cpy = Hand(len(self.hand))
+        cpy = Hand(len(self.hand), None)
         cpy.hand = [card for card in self.hand] #UnknownCard immutable; shallow copy safe 
         return cpy
 
@@ -413,8 +484,10 @@ class PlayedCards:
     """
     A collection of cards which have been played successfully, adding to a firework.
     """
-    def __init__(self):
+    def __init__(self, rules):
         self.cards = {color : Card(color, 0) for color in (Color)}
+        if not rules.rainbow_enabled: del self.cards[Color.MULTICOLOR]
+        self.rules = rules
 
     def add(self, card):
         color = card.color
@@ -427,12 +500,13 @@ class PlayedCards:
         return self.cards.values()
 
     def copy(self):
-        cpy = PlayedCards()
+        cpy = PlayedCards(self.rules)
+        cpy.rules = self.rules
         cpy.cards = {k : v for k, v in self.cards.items()} #color and Cards immutable
         return cpy
 
     def __str__(self):
-        return tabulate([[style_text(color, self.cards[color]) for color in self.cards]],
+        return tabulate([[self.cards[color] for color in self.cards]],
                         tablefmt = 'pretty')
 
     def __getitem__(self, key):
@@ -446,10 +520,12 @@ class OutstandingCards:
     by discards and plays.  Notably, cards which are in players' hands are
     considered to be outstanding because they are not publicly known.
     """
-    def __init__(self):
+    def __init__(self, rules):
         self.cards = []
+        self.rules = rules
 
-        for color in (Color):
+        for color in Color:
+            if color == Color.MULTICOLOR and not self.rules.rainbow_enabled: continue
             for i in range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1):
                 for j in range(CARD_FREQUENCIES[i - 1]):
                    self.cards.append(Card(color, i))
@@ -463,21 +539,25 @@ class OutstandingCards:
         return len(self.cards)
 
     def __str__(self):
-        data = [[style_text(color, color.name) for color in Color]]
+        data = [[style_text(color, color.name) for color in Color \
+                 if (color != Color.MULTICOLOR or self.rules.rainbow_enabled)]]
         #Sort outstanding cards by color
-        columns = [ [*filter(lambda card: card.color == color, self.cards)] for color in Color ]
+        columns = [ [*filter(lambda card: card.color == color, self.cards)] for color in Color \
+                    if (color != Color.MULTICOLOR or self.rules.rainbow_enabled) ]
         table_length = max([len(col) for col in columns])
         #Create table rows.  Each row is the next card number of that color, or empty if no
         #cards of that color remain.
         for i in range(table_length):
-            row = [columns[j][i] if len(columns[j]) >= i + 1 else ' ' for j in range(len(Color))]
+            row = [columns[j][i] if len(columns[j]) >= i + 1 else ' ' 
+                   for j in range(len(Color) - (0 if self.rules.rainbow_enabled else 1))]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
     
     def copy(self):
-        cpy = OutstandingCards()
+        cpy = OutstandingCards(self.rules)
         #cards immutable; no deep copy needed
         cpy.cards = self.cards.copy()
+        cpy.rules = self.rules
         return cpy
 
 
@@ -485,8 +565,10 @@ class DiscardedCards:
     """
     A collection of all cards which have been discarded.
     """
-    def __init__(self):
+    def __init__(self, rules):
         self.cards = {color : [] for color in (Color)}
+        if not rules.rainbow_enabled: del self.cards[Color.MULTICOLOR]
+        self.rules = rules
 
     def add(self, card):
         new_state = self.copy()
@@ -494,20 +576,24 @@ class DiscardedCards:
         return new_state
 
     def copy(self):
-        cpy = DiscardedCards()
+        cpy = DiscardedCards(self.rules)
         cpy.cards = {color : lst.copy() for color, lst in self.cards.items()} #shallow copy lists
+        cpy.rules = self.rules
         return cpy
 
     def __str__(self):
         #Have as many rows as needed to fit all the cards of the most-discarded color
         table_length = max([len(l) for l in self.cards.values()])
 
-        header = [style_text(color, color.name) for color in Color]
+        header = [style_text(color, color.name) for color in Color \
+                  if (color != Color.MULTICOLOR or self.rules.rainbow_enabled)]
         data = [header]
         for i in range(table_length):
             #Create table rows.  Each row is the next card number of that color, or empty if no
             #cards of that color remain.
-            row = [self.cards[color][i] if len(self.cards[color]) >= i + 1 else ' ' for color in Color]
+            row = [self.cards[color][i] if len(self.cards[color]) >= i + 1 else ' ' \
+                   for color in Color \
+                   if (color != Color.MULTICOLOR or self.rules.rainbow_enabled)]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
 
@@ -557,12 +643,12 @@ class GameState:
     
     default_players = ['Player0', 'Player1', 'Player2']
     default_protocols = ['in_place', 'left_shift', 'right_shift']
+    default_rules = HanabiRuleset(True, False, False)
 
-    def __init__(self, players=default_players, protocols=default_protocols):
+    def __init__(self, players=default_players, protocols=default_protocols, ruleset=default_rules):
+        self.rules = ruleset
         self.misfires = self.STARTING_MISFIRES
         self.hints = self.STARTING_HINTS
-        self.play = PlayedCards()
-        self.discard = DiscardedCards()
         self.player_up = self.STARTING_PLAYER_UP
         self.round = self.STARTING_ROUND
         self.num_players = len(players)
@@ -572,9 +658,11 @@ class GameState:
         if (len(protocols) != self.num_players):
             raise HanabiSimException(f'There must be exactly one protocol per player (players: '\
                                      f'{self.num_players}; protocols: {len(protocols)})')
-        self.players = [Player(name, self.HAND_SIZES[self.num_players], protocol) \
+        self.players = [Player(name, self.HAND_SIZES[self.num_players], self.rules, protocol) \
                         for name, protocol in zip(players, protocols)]
-        self.outstanding_cards = OutstandingCards()
+        self.outstanding_cards = OutstandingCards(self.rules)
+        self.play = PlayedCards(self.rules)
+        self.discard = DiscardedCards(self.rules)
         self.num_in_deck = len(self.outstanding_cards) - sum([len(p.hand) for p in self.players])
         self.over = False
         self.previous_state = None
@@ -622,6 +710,7 @@ class GameState:
 
     def copy(self):
         cpy = GameState()
+        cpy.rules = self.rules
         cpy.misfires = self.misfires
         cpy.hints = self.hints
         cpy.play = self.play
@@ -672,9 +761,9 @@ class Player:
     """
     A player in the game of Hanabi, who holds a hand and performs actions to advance the game.
     """
-    def __init__(self, name, hand_size, replenishment_protocol='in_place'):
+    def __init__(self, name, hand_size, rules, replenishment_protocol='in_place'):
         self.name = name
-        self.hand = Hand(hand_size)
+        if rules: self.hand = Hand(hand_size, rules)
         self.replenishment_protocol = replenishment_protocol
 
     def perform_discard(self, position, card, game, verbose=False):
@@ -693,6 +782,8 @@ class Player:
             errstr = f'The card identity {card} which you gave was not possible '\
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
+        if card.color == Color.MULTICOLOR and not game.rules.rainbow_enabled:
+            raise HanabiSimException('The rules of this game do not allow multicolor cards.')
         new_state = game.copy()
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
@@ -707,7 +798,7 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self) #TODO
+            new_player.hand = new_player.hand.replace_card(new_state.round, position, self, game.rules)
         else:
             del new_player.hand.hand[position]
         new_state.previous_state = game
@@ -730,6 +821,8 @@ class Player:
             errstr = f'The card identity {card} which you gave was not possible '\
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
+        if card.color == Color.MULTICOLOR and not game.rules.rainbow_enabled:
+            raise HanabiSimException('The rules of this game do not allow multicolor cards.')
         new_state = game.copy()
         #successful play
         if (card.number == new_state.play[card.color].number + 1):
@@ -755,7 +848,7 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self)#TODO
+            new_player.hand = new_player.hand.replace_card(new_state.round, position, self, game.rules)
         else:
             del new_player.hand.hand[position]
         new_state.previous_state = game
@@ -789,9 +882,8 @@ class Player:
         new_player = target_player.copy()
         try:
             new_player.hand = new_player.hand.process_hint(
-                                  positions, hint, new_state.round, self.name)
-        except HanabiIndexException as e:
-            raise e
+                                  positions, hint, game.rules, new_state.round, self.name)
+        except (HanabiIndexException, HanabiSimException) as e: raise e
         new_state.players[game.players.index(target_player)] = new_player
         new_state.advance_turn()
         hint = HintAction(game.players.index(target_player), hint,\
@@ -811,7 +903,7 @@ class Player:
             raise HanabiIndexException(position, f'Invalid position ({position}) given.')
         new_state = game.copy()
         new_player = self.copy()
-        try: new_player.hand = new_player.hand.process_guess(position, guess)
+        try: new_player.hand = new_player.hand.process_guess(position, guess, game.rules)
         except (HanabiSimException, HanabiIndexException) as e: raise e
         new_state.players[game.players.index(self)] = new_player
         new_state.previous_state = game
@@ -847,7 +939,7 @@ class Player:
         return new_state
 
     def copy(self):
-        cpy = Player(self.name, 0, self.replenishment_protocol)
+        cpy = Player(self.name, 0, None, self.replenishment_protocol)
         cpy.hand = self.hand.copy()
         return cpy
 

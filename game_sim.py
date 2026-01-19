@@ -70,7 +70,7 @@ def handle_show(choice, game):
             except ValueError: return f'Expected an integer card position; yours: {position}.'
             if not 1 <= position <= len(player.hand):
                 return f'Position {position} is out of range'
-            text = '{player.name} card {position}:\n{player.represent_card(position - 1)}'
+            text = f'{player.name} card {position}:\n{player.represent_card(position - 1)}'
         case ['card', *args] | ['c', *args]:
             text = 'Additional input required for card histroy; see "help show"'
         case ['hand', *args] | ['h', *args]:
