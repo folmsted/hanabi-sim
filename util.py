@@ -16,7 +16,9 @@ STR_TO_COLOR_MAP = {
     'y'          : Color.YELLOW,
     'yellow'     : Color.YELLOW,
     'm'          : Color.MULTICOLOR,
-    'multicolor' : Color.MULTICOLOR
+    'multi'      : Color.MULTICOLOR,
+    'multicolor' : Color.MULTICOLOR,
+    'rainbow'    : Color.MULTICOLOR
 }
 
 PROTOCOL_MAP = {
@@ -46,6 +48,69 @@ def trim_comment(string, comment_delimiter=COMMENT_START):
     """
     x = string.find(comment_delimiter)
     return string if x == -1 else string[:x]
+
+def get_rules(setup_choices, outfile, color_picker):
+    """
+    Prompt the user (or read from file) to establish rules.
+    """
+    rules = HanabiRuleset()
+    done = False
+    while (not done):
+        rule = setup_choices.pop(0).strip() if setup_choices else \
+                     input(style_text(next(color_picker),
+                           f'Print rules, change a rule, go to game, or ask for help with \'?\':'
+                     ))
+        if outfile:
+            outfile.write(rule + '\n')
+        rule = trim_comment(rule, COMMENT_START).strip().split()
+        match rule:
+            case ['?']:
+                helpstr = 'To print rules, use "print rules" or just \'p\' for short.\n'\
+                          'To comfirm current rules and continue, leave blank.\n'\
+                          'To change a rule, type the rule name and the new value to give it.'
+                print(helpstr)
+            case []:
+                done = True
+            case ['print', 'rules'] | ['p']:
+                print(rules)
+            case ['rainbow_enabled', arg]:
+                try:
+                    rules.rainbow_enabled = bool(arg)
+                    print('Success.')
+                except: print('Failure; invalid value.')
+            case ['rainbow_wild_hint', arg]:
+                try:
+                    rules.rainbow_wild_hint = bool(arg)
+                    print('Success.')
+                except: print('Failure; invalid value.')
+            case ['rainbow_wild_play', arg]:
+                try:
+                    rules.rainbow_wild_play = bool(arg)
+                    print('Success.')
+                except: print('Failure; invalid value.')
+            case ['bombs_give_hints', arg]:
+                try:
+                    rules.bombs_give_hints = bool(arg)
+                    print('Success.')
+                except: print('Failure; invalid value.')
+            case ['extra_cards', arg]:
+                try:
+                    if int(arg) in rules.EXTRA_CARDS_OPTIONS:
+                        rules.extra_cards = int(arg)
+                        print('Success.')
+                    else: raise
+                except: print('Failure; invalid value.')
+            case ['extra_hints', arg]:
+                try:
+                    if int(arg) in rules.EXTRA_HINTS_OPTIONS:
+                        rules.extra_hints = int(arg)
+                        print('Success.')
+                    else: raise
+                except: print('Failure; invalid value.')
+            case _:
+                print('Unrecognized action.')
+    return rules
+                
 
 def get_players(setup_choices, outfile, color_picker):
     """

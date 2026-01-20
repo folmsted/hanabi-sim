@@ -83,10 +83,56 @@ def guess_text(color, text):
 
 class HanabiRuleset:
 
-    def __init__(self, rainbow_enabled, rainbow_wild_hint, rainbow_wild_play):
-        self.rainbow_enabled = rainbow_enabled
-        self.rainbow_wild_hint = rainbow_wild_hint
-        self.rainbow_wild_play = rainbow_wild_play
+    RAINBOW_ENABLED_OPTIONS = {True, False}
+    RAINBOW_WILD_HINT_OPTIONS = {True, False}
+    RAINBOW_WILD_PLAY_OPTIONS = {True, False}
+    BOMBS_GIVE_HINTS_OPTIONS = {True, False}
+    EXTRA_CARDS_OPTIONS = {-1, 0, 1}
+    EXTRA_HINTS_OPTIONS = {*range(-8, 4)}
+
+    DEFAULT_RAINBOW_ENABLED = False
+    DEFAULT_WILD_HINT = False
+    DEFAULT_WILD_PLAY = False
+    DEFAULT_BOMBS_GIVE_HINTS = True #contrary to actual rules, I think, but this is a better rule
+    DEFAULT_EXTRA_CARDS = 0
+    DEFAULT_EXTRA_HINTS = 0
+
+    def __init__(self, rainbow_enabled=DEFAULT_RAINBOW_ENABLED,
+                       rainbow_wild_hint=DEFAULT_WILD_HINT,
+                       rainbow_wild_play=DEFAULT_WILD_PLAY,
+                       bombs_give_hints=DEFAULT_BOMBS_GIVE_HINTS,
+                       extra_cards=DEFAULT_EXTRA_CARDS,
+                       extra_hints=DEFAULT_EXTRA_HINTS):
+        #treatment of rainbow cards
+        if rainbow_enabled in self.RAINBOW_ENABLED_OPTIONS: self.rainbow_enabled = rainbow_enabled
+        else: raise ValueError(f'rainbow_enabled must be one of {RAINBOW_ENABLED_OPTIONS}.')
+        if rainbow_wild_hint in self.RAINBOW_WILD_HINT_OPTIONS:
+            self.rainbow_wild_hint = rainbow_wild_hint
+        else:
+            raise ValueError(f'rainbow_wild_hint must be one of {RAINBOW_WILD_HINT_OPTIONS}.')
+        if rainbow_wild_play in self.RAINBOW_WILD_PLAY_OPTIONS:
+            self.rainbow_wild_play = rainbow_wild_play
+        else:
+            raise ValueError(f'rainbow_wild_play must be one of {RAINBOW_WILD_PLAY_OPTIONS}.')
+        #modifications
+        if bombs_give_hints in self.BOMBS_GIVE_HINTS_OPTIONS: self.bombs_give_hints = bombs_give_hints
+        else: raise ValueError('bombs_give_hints must be one of {BOMBS_GIVE_HINTS}.')
+        if extra_cards in self.EXTRA_CARDS_OPTIONS: self.extra_cards = extra_cards
+        else: raise ValueError('extra_cards must be one of {EXTRA_CARDS_OPTIONS}.')
+        if extra_hints in self.EXTRA_HINTS_OPTIONS: self.extra_hints = extra_hints
+        else: raise ValueError('extra_hints must be one of {EXTRA_HINTS_OPTIONS}')
+
+    def __str__(self):
+        header = ['rule', 'current value', 'possible values']
+        rows = [
+            ['rainbow_enabled', self.rainbow_enabled, self.RAINBOW_ENABLED_OPTIONS],
+            ['rainbow_wild_hint', self.rainbow_wild_hint, self.RAINBOW_WILD_HINT_OPTIONS],
+            ['rainbow_wild_play', self.rainbow_wild_play, self.RAINBOW_WILD_PLAY_OPTIONS],
+            ['bombs_give_hints', self.bombs_give_hints, self.BOMBS_GIVE_HINTS_OPTIONS],
+            ['extra_cards', self.extra_cards, self.EXTRA_CARDS_OPTIONS],
+            ['extra_hints', self.extra_hints, self.EXTRA_HINTS_OPTIONS]
+        ]
+        return tabulate(rows, headers=header, tablefmt='pretty')
 
 
 class Card:
@@ -160,7 +206,7 @@ class UnknownCard:
         """
         if rules.rainbow_wild_hint:
             if color == color.MULTICOLOR:
-                raise HanabiRulesException('Cannot hint Multicolor when in wild-hint mode.')
+                raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} when in wild-hint mode.')
             if not (color in self.colors or Color.MULTICOLOR in self.colors):
                 raise HanabiSimException(f'Inconsistent hints: color '\
                                      f'{style_text(color, color.name)}'\
@@ -192,7 +238,7 @@ class UnknownCard:
         """
         if rules.rainbow_wild_hint:
             if color == color.MULTICOLOR:
-                raise HanabiRulesException('Cannot hint Multicolor when in wild-hint mode.')
+                raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} when in wild-hint mode.')
             if not (color in self.colors or Color.MULTICOLOR in self.colors): return self #n.t.d.
             new_state = self.copy()
             new_state.colors = new_state.colors - {color, Color.MULTICOLOR}
@@ -203,6 +249,7 @@ class UnknownCard:
                                      f'{str(self)}')
             new_state.previous_states.append(self)
             new_state.round_updated, new_state.turn_updated = (rnd, trn)
+            return new_state
             
         if (color not in self.colors): return self #nothing to do
         new_state = self.copy()
@@ -369,7 +416,7 @@ class Hand:
         for i, card in enumerate(self.hand):
             if isinstance(hint, Color):
                 if hint == Color.MULTICOLOR and not rules.rainbow_enabled:
-                    raise HanabiSimException('This game does not have multicolor cards.')
+                    raise HanabiSimException(f'This game does not have {Color.MULTICOLOR} cards.')
                 try: 
                     new_hand.hand[i] = card.hint_color_positive(hint, r, t, rules) if i in positions \
                                        else card.hint_color_negative(hint, r, t, rules)
@@ -392,7 +439,7 @@ class Hand:
             new_card_state = card.guess_number(guess)
         elif isinstance(guess, Color):
             if guess == Color.MULTICOLOR and not rules.rainbow_enabled:
-                raise HanabiSimException('This game doe not have multicolor cards.')
+                raise HanabiSimException(f'This game doe not have {Color.MULTICOLOR} cards.')
             if guess not in card.colors:
                 raise HanabiSimException(f'Bad guess; color {style_text(color, color.name)} '
                                          f'already disqualified.')
@@ -643,12 +690,13 @@ class GameState:
     
     default_players = ['Player0', 'Player1', 'Player2']
     default_protocols = ['in_place', 'left_shift', 'right_shift']
-    default_rules = HanabiRuleset(True, False, False)
+    default_rules = HanabiRuleset(True, True, False)
 
     def __init__(self, players=default_players, protocols=default_protocols, ruleset=default_rules):
         self.rules = ruleset
         self.misfires = self.STARTING_MISFIRES
-        self.hints = self.STARTING_HINTS
+        self.hints = self.STARTING_HINTS + self.rules.extra_hints
+        self.MAX_HINTS += self.rules.extra_hints
         self.player_up = self.STARTING_PLAYER_UP
         self.round = self.STARTING_ROUND
         self.num_players = len(players)
@@ -658,7 +706,7 @@ class GameState:
         if (len(protocols) != self.num_players):
             raise HanabiSimException(f'There must be exactly one protocol per player (players: '\
                                      f'{self.num_players}; protocols: {len(protocols)})')
-        self.players = [Player(name, self.HAND_SIZES[self.num_players], self.rules, protocol) \
+        self.players = [Player(name, self.HAND_SIZES[self.num_players] + self.rules.extra_cards, self.rules, protocol) \
                         for name, protocol in zip(players, protocols)]
         self.outstanding_cards = OutstandingCards(self.rules)
         self.play = PlayedCards(self.rules)
@@ -783,7 +831,7 @@ class Player:
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
         if card.color == Color.MULTICOLOR and not game.rules.rainbow_enabled:
-            raise HanabiSimException('The rules of this game do not allow multicolor cards.')
+            raise HanabiSimException(f'The rules of this game do not allow {Color.MULTICOLOR} cards.')
         new_state = game.copy()
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
@@ -822,7 +870,7 @@ class Player:
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
         if card.color == Color.MULTICOLOR and not game.rules.rainbow_enabled:
-            raise HanabiSimException('The rules of this game do not allow multicolor cards.')
+            raise HanabiSimException(f'The rules of this game do not allow {Color.MULTICOLOR} cards.')
         new_state = game.copy()
         #successful play
         if (card.number == new_state.play[card.color].number + 1):
@@ -837,7 +885,8 @@ class Player:
             new_state.turns_taken.append(MisfireAction(card, self.hand[position]))
             new_state.misfires += 1
             new_state.over = new_state.misfires > new_state.MAX_MISFIRES
-            new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
+            if game.rules.bombs_give_hints:
+                new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
             new_state.discard = new_state.discard.add(card)
         #update outstanding and replenish in any event
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)

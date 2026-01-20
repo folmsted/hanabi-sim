@@ -325,12 +325,15 @@ if __name__ == '__main__':
         outfile = open(outfile_name, 'w')
 
     color_picker = util.generate_color()
-    try:
-        players, protocols = util.get_players(setup_choices, outfile, color_picker)
+    try: rules = util.get_rules(setup_choices, outfile, color_picker)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
         exit(0)
-    game = GameState(players, protocols)
+    try: players, protocols = util.get_players(setup_choices, outfile, color_picker)
+    except (KeyboardInterrupt, EOFError):
+        print('\nProgram terminated by user.')
+        exit(0)
+    game = GameState(players, protocols, ruleset=rules)
 
     while (not game.over):
         prompt = f'Ask for information with "?" or make a play '\
