@@ -85,53 +85,60 @@ class HanabiRuleset:
 
     RAINBOW_ENABLED_OPTIONS = {True, False}
     RAINBOW_WILD_HINT_OPTIONS = {True, False}
-    RAINBOW_WILD_PLAY_OPTIONS = {True, False}
+    RAINBOW_PLAY_OPTIONS = {'wild', 'suit'}
     BOMBS_GIVE_HINTS_OPTIONS = {True, False}
     EXTRA_CARDS_OPTIONS = {-1, 0, 1}
-    EXTRA_HINTS_OPTIONS = {*range(-8, 4)}
+    EXTRA_HINTS_OPTIONS = range(-8, 4)
 
     DEFAULT_RAINBOW_ENABLED = False
     DEFAULT_WILD_HINT = False
-    DEFAULT_WILD_PLAY = False
-    DEFAULT_BOMBS_GIVE_HINTS = True #contrary to actual rules, I think, but this is a better rule
+    DEFAULT_RAINBOW_PLAY = 'suit'
+    DEFAULT_BOMBS_GIVE_HINTS = True #contrary to actual rules, but this is more fun
     DEFAULT_EXTRA_CARDS = 0
     DEFAULT_EXTRA_HINTS = 0
 
     def __init__(self, rainbow_enabled=DEFAULT_RAINBOW_ENABLED,
                        rainbow_wild_hint=DEFAULT_WILD_HINT,
-                       rainbow_wild_play=DEFAULT_WILD_PLAY,
+                       rainbow_play=DEFAULT_RAINBOW_PLAY,
                        bombs_give_hints=DEFAULT_BOMBS_GIVE_HINTS,
                        extra_cards=DEFAULT_EXTRA_CARDS,
                        extra_hints=DEFAULT_EXTRA_HINTS):
         #treatment of rainbow cards
-        if rainbow_enabled in self.RAINBOW_ENABLED_OPTIONS: self.rainbow_enabled = rainbow_enabled
-        else: raise ValueError(f'rainbow_enabled must be one of {RAINBOW_ENABLED_OPTIONS}.')
+        if rainbow_enabled in self.RAINBOW_ENABLED_OPTIONS:
+            self.rainbow_enabled = rainbow_enabled
+        else:
+            raise ValueError(f'rainbow_enabled must be one of {self.RAINBOW_ENABLED_OPTIONS}.')
         if rainbow_wild_hint in self.RAINBOW_WILD_HINT_OPTIONS:
             self.rainbow_wild_hint = rainbow_wild_hint
         else:
-            raise ValueError(f'rainbow_wild_hint must be one of {RAINBOW_WILD_HINT_OPTIONS}.')
-        if rainbow_wild_play in self.RAINBOW_WILD_PLAY_OPTIONS:
-            self.rainbow_wild_play = rainbow_wild_play
+            raise ValueError(f'rainbow_wild_hint must be one of {self.RAINBOW_WILD_HINT_OPTIONS}.')
+        if rainbow_play in self.RAINBOW_PLAY_OPTIONS:
+            self.rainbow_play = rainbow_play
         else:
-            raise ValueError(f'rainbow_wild_play must be one of {RAINBOW_WILD_PLAY_OPTIONS}.')
+            raise ValueError(f'rainbow_play must be one of {self.RAINBOW_PLAY_OPTIONS}.')
         #modifications
-        if bombs_give_hints in self.BOMBS_GIVE_HINTS_OPTIONS: self.bombs_give_hints = bombs_give_hints
-        else: raise ValueError('bombs_give_hints must be one of {BOMBS_GIVE_HINTS}.')
+        if bombs_give_hints in self.BOMBS_GIVE_HINTS_OPTIONS:
+            self.bombs_give_hints = bombs_give_hints
+        else:
+            raise ValueError('bombs_give_hints must be one of {self.BOMBS_GIVE_HINTS}.')
         if extra_cards in self.EXTRA_CARDS_OPTIONS: self.extra_cards = extra_cards
-        else: raise ValueError('extra_cards must be one of {EXTRA_CARDS_OPTIONS}.')
+        else: raise ValueError('extra_cards must be one of {self.EXTRA_CARDS_OPTIONS}.')
         if extra_hints in self.EXTRA_HINTS_OPTIONS: self.extra_hints = extra_hints
-        else: raise ValueError('extra_hints must be one of {EXTRA_HINTS_OPTIONS}')
+        else: raise ValueError('extra_hints must be one of {self.EXTRA_HINTS_OPTIONS}')
 
     def __str__(self):
-        header = ['rule', 'current value', 'possible values']
+        header = ['rule', 'short form', 'current value', 'possible values']
         rows = [
-            ['rainbow_enabled', self.rainbow_enabled, self.RAINBOW_ENABLED_OPTIONS],
-            ['rainbow_wild_hint', self.rainbow_wild_hint, self.RAINBOW_WILD_HINT_OPTIONS],
-            ['rainbow_wild_play', self.rainbow_wild_play, self.RAINBOW_WILD_PLAY_OPTIONS],
-            ['bombs_give_hints', self.bombs_give_hints, self.BOMBS_GIVE_HINTS_OPTIONS],
-            ['extra_cards', self.extra_cards, self.EXTRA_CARDS_OPTIONS],
-            ['extra_hints', self.extra_hints, self.EXTRA_HINTS_OPTIONS]
+            ['rainbow_enabled', 're', self.rainbow_enabled, self.RAINBOW_ENABLED_OPTIONS],
+            ['rainbow_wild_hint', 'rwh', self.rainbow_wild_hint, self.RAINBOW_WILD_HINT_OPTIONS],
+            ['rainbow_play', 'rp', self.rainbow_play, self.RAINBOW_PLAY_OPTIONS],
+            ['bombs_give_hints', 'bgh', self.bombs_give_hints, self.BOMBS_GIVE_HINTS_OPTIONS],
+            ['extra_cards', 'ec', self.extra_cards, self.EXTRA_CARDS_OPTIONS],
+            ['extra_hints', 'eh', self.extra_hints, self.EXTRA_HINTS_OPTIONS]
         ]
+        if not self.rainbow_enabled:
+            del rows[2]
+            del rows[1]
         return tabulate(rows, headers=header, tablefmt='pretty')
 
 
@@ -690,13 +697,12 @@ class GameState:
     
     default_players = ['Player0', 'Player1', 'Player2']
     default_protocols = ['in_place', 'left_shift', 'right_shift']
-    default_rules = HanabiRuleset(True, True, False)
+    default_rules = HanabiRuleset()
 
     def __init__(self, players=default_players, protocols=default_protocols, ruleset=default_rules):
         self.rules = ruleset
         self.misfires = self.STARTING_MISFIRES
         self.hints = self.STARTING_HINTS + self.rules.extra_hints
-        self.MAX_HINTS += self.rules.extra_hints
         self.player_up = self.STARTING_PLAYER_UP
         self.round = self.STARTING_ROUND
         self.num_players = len(players)
@@ -819,7 +825,7 @@ class Player:
         Attempt to perform a discard, updating state of the discarded cards, hints,
         and hand of the player performing the discard.
         """
-        if (game.hints == game.MAX_HINTS):
+        if (game.hints >= game.MAX_HINTS):
             raise HanabiRulesException('Cannot discard while hints are at maximum!')
         if (not 0 <= position < len(self.hand)):
             errstr = 'the position given was not in range.\n'\

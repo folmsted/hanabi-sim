@@ -67,46 +67,107 @@ def get_rules(setup_choices, outfile, color_picker):
             case ['?']:
                 helpstr = 'To print rules, use "print rules" or just \'p\' for short.\n'\
                           'To comfirm current rules and continue, leave blank.\n'\
-                          'To change a rule, type the rule name and the new value to give it.'
+                          'To change a rule, type the rule name or short form and the new value to give it.\n'\
+                          'To explain what a rule does, type "explain <rulename|short form>".\n'\
+                          'For rules with only two possible values, giving no value toggles between options.'
                 print(helpstr)
             case []:
                 done = True
             case ['print', 'rules'] | ['p']:
                 print(rules)
-            case ['rainbow_enabled', arg]:
+            case ['rainbow_enabled', *arg] | ['re', *arg]:
                 try:
-                    rules.rainbow_enabled = bool(arg)
+                    new_value = not rules.rainbow_enabled if not arg        else \
+                                True  if 'true'.startswith(arg[0].lower())  else \
+                                False if 'false'.startswith(arg[0].lower()) else \
+                                1 / 0 #raise exception to fail TODO be smarter
+                    rules.rainbow_enabled = new_value
                     print('Success.')
                 except: print('Failure; invalid value.')
-            case ['rainbow_wild_hint', arg]:
+            case ['rainbow_wild_hint', *arg] | ['rwh', *arg] if rules.rainbow_enabled:
                 try:
-                    rules.rainbow_wild_hint = bool(arg)
+                    new_value = not rules.rainbow_wild_hint if not arg      else \
+                                True  if 'true'.startswith(arg[0].lower())  else \
+                                False if 'false'.startswith(arg[0].lower()) else \
+                                1 / 0 #TODO be smarter
+                    rules.rainbow_wild_hint = new_value
                     print('Success.')
                 except: print('Failure; invalid value.')
-            case ['rainbow_wild_play', arg]:
+            case ['rainbow_wild_hint', *arg] | ['rwh', *arg]:
+                print('No rainbows in the game; to enable, toggle "rainbow_enabled".')
+            case ['rainbow_play', *arg] | ['rp', *arg] if rules.rainbow_enabled:
                 try:
-                    rules.rainbow_wild_play = bool(arg)
+                    new_value = (rules.RAINBOW_PLAY_OPTIONS - {rules.rainbow_play}).pop() if not arg else \
+                                'suit' if 'suit'.startswith(arg[0].lower()) else \
+                                'wild' if 'wild'.startswith(arg[0].lower()) else \
+                                1 / 0 #TODO be smarter
+                    rules.rainbow_play = new_value
                     print('Success.')
                 except: print('Failure; invalid value.')
-            case ['bombs_give_hints', arg]:
+            case ['rainbow_play', *arg] | ['rp', *arg]:
+                print('No rainbows in the game; to enable, toggle "rainbow_enabled".')
+            case ['bombs_give_hints', *arg] | ['bgh', *arg]:
                 try:
-                    rules.bombs_give_hints = bool(arg)
+                    new_value = not rules.bombs_give_hints if not arg       else \
+                                True  if 'true'.startswith(arg[0].lower())  else \
+                                False if 'false'.startswith(arg[0].lower()) else \
+                                1 / 0 #TODO be smarter
+                    rules.bombs_give_hints = new_value
                     print('Success.')
                 except: print('Failure; invalid value.')
-            case ['extra_cards', arg]:
+            case ['extra_cards', arg] | ['ec', arg]:
                 try:
                     if int(arg) in rules.EXTRA_CARDS_OPTIONS:
                         rules.extra_cards = int(arg)
                         print('Success.')
                     else: raise
                 except: print('Failure; invalid value.')
-            case ['extra_hints', arg]:
+            case ['extra_hints', arg] | ['eh', arg]:
                 try:
                     if int(arg) in rules.EXTRA_HINTS_OPTIONS:
                         rules.extra_hints = int(arg)
                         print('Success.')
                     else: raise
                 except: print('Failure; invalid value.')
+            case ['explain', arg]:
+                match arg:
+                    case 'rainbow_enabled' | 're':
+                        s = 'Determines whether the game will be played with rainbow cards.\n'\
+                            'If True, rainbow cards will be used.  If False, they will not.\n'\
+                            'When True, enables the rules for handling rainbow cards.'
+                        print(s)
+                    case 'rainbow_wild_hint' | 'rwh':
+                        s = 'Determines whether rainbow cards are "wild" when hinted.\n'\
+                            'If True, rainbow cards will always be treated as matching\n'\
+                            'the color of a hint, and the rainbow color cannot be hinted.\n'\
+                            'If False, rainbw can be hinted and only matches hints of\n'\
+                            'rainbow color.  Rule available only if rainbow_available is True.'
+                        print(s)
+                    case 'rainbow_play' | 'rp':
+                        s = 'Determines whether rainbow cards play into a separate suit\n'\
+                            '(when set to "suit") or whether they are "wild" when played\n'\
+                            '(when set to "wild").  A "wild" rainbow card can add to any\n'\
+                            'color\'s firework for which its number is valid when played,\n'\
+                            'determined by the player playing the card.  A "suit" rainbow\n'\
+                            'card plays into a rainbow suit as usual.'
+                        print(s)
+                    case 'bombs_give_hints' | 'bgh':
+                        s = 'Determines whether wrongly played cards (triggering a misfire)\n'\
+                            'give a hint.  If True, a misfired card will restore a hint if\n'\
+                            'hints are below maximum.  If False, this will not happen.'
+                        print(s)
+                    case 'extra_cards' | 'ec':
+                        s = 'Modifies the number of cards each player is dealt and holds.\n'\
+                            'Negative numbers reduce hand size.'
+                        print(s)
+                    case 'extra_hints' | 'eh':
+                        s = 'Modifies the number of hints the players start with.\n'\
+                            'Negative numbers reduce the number of hints.  Notably,\n'\
+                            'the maximum number of hints (8) is not affected.\n'\
+                            'Starting hints in excess of maximum are not lost until used\n'\
+                            'but cannot be replenished, since discarding is illegal if\n'\
+                            'the number of hints would be brought above maximum.'
+                        print(s)
             case _:
                 print('Unrecognized action.')
     return rules
