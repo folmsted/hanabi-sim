@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, nonmember
 from tabulate import tabulate
 from colorama import Fore, Back, Style
 from bisect import insort
@@ -14,10 +14,29 @@ class Color(Enum):
     YELLOW = 5
     MULTICOLOR = 6
     
+    #A generator to randomly shuffle some reasonably legible colors and
+    #return them in that order forever, repeating when exhausted.
+    def generate_color():
+        #Commented colors are harder to read; move pound signs to include additional colors 
+        colors =  ([
+                      Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
+                      Fore.MAGENTA, Fore.CYAN, #Fore.WHITE,
+                      Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
+                      Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
+                      Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
+                  ])
+        random.shuffle(colors)
+        colors.pop() # delete one at random for a little variety
+
+        i = 0
+        while (i < len(colors)):
+            yield colors[i]
+            i = (i + 1) % len(colors)
+
+    multicolor_generator = nonmember(generate_color())
+
     def __str__(self):
         return style_text(self, self.name)
-
-
 
 MIN_CARD_VALUE = 1
 MAX_CARD_VALUE = 5
@@ -41,26 +60,6 @@ SUSPICION_STYLE = defaultdict(lambda: f'{Back.LIGHTWHITE_EX}{Fore.BLACK}') | {
     Color.MULTICOLOR: Back.MAGENTA
 }
 
-#A generator to randomly shuffle some reasonably legible colors and return them in that order forever, repeating when exhausted.
-def generate_color():
-    #Commented colors are harder to read; move pound signs to include additional colors 
-    colors =  ([
-                  Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
-                  Fore.MAGENTA, Fore.CYAN, #Fore.WHITE,
-                  Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
-                  Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
-                  Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
-              ])
-    random.shuffle(colors)
-    colors.pop() # delete one at random, for a little variety
-
-    i = 0
-    while (i < len(colors)):
-        yield colors[i]
-        i = (i + 1) % len(colors)
-
-multicolor_generator = generate_color()
-
 def style_text(color, text, deterministic = False):
     """
     color: a Color object or a valid colorama color
@@ -68,7 +67,8 @@ def style_text(color, text, deterministic = False):
     """
     match color:
         case Color.MULTICOLOR if not deterministic:
-            return f'{"".join([next(multicolor_generator) + c for c in text])}{Style.RESET_ALL}'
+            colored_characters = [next(Color.multicolor_generator) + c for c in text]
+            return f'{"".join(colored_characters)}{Style.RESET_ALL}'
         case Color():
             return f'{PRINT_STYLE[color]}{text}{Style.RESET_ALL}'
         case _:
@@ -81,64 +81,175 @@ def guess_text(color, text):
     """
     return f'{SUSPICION_STYLE[color]}{text}{Style.RESET_ALL}'
 
-HanabiRule = namedtuple('HanabiRule', ['value', 'allowed_values', 'description'])
+HanabiRule = namedtuple('HanabiRule', ['value', 'short_form', 'allowed_values', 'description'])
 
 class HanabiRuleset:
 
-    RAINBOW_ENABLED_OPTIONS = {True, False}
-    RAINBOW_WILD_HINT_OPTIONS = {True, False}
-    RAINBOW_PLAY_OPTIONS = {'wild', 'suit'}
+    RAINBOW_ENABLED_OPTIONS =  {True, False}
+    RAINBOW_HINT_OPTIONS =     {'wild', 'suit'}
+    RAINBOW_PLAY_OPTIONS =     {'wild', 'suit'}
     BOMBS_GIVE_HINTS_OPTIONS = {True, False}
-    EXTRA_CARDS_OPTIONS = {-1, 0, 1}
-    EXTRA_HINTS_OPTIONS = range(-8, 4)
+    EXTRA_CARDS_OPTIONS =      {-1, 0, 1}
+    EXTRA_HINTS_OPTIONS =      range(-8, 4)
 
-    DEFAULT_RAINBOW_ENABLED = False
-    DEFAULT_WILD_HINT = False
-    DEFAULT_RAINBOW_PLAY = 'suit'
+    DEFAULT_RAINBOW_ENABLED =  False
+    DEFAULT_RAINBOW_HINT =     'suit'
+    DEFAULT_RAINBOW_PLAY =     'suit'
     DEFAULT_BOMBS_GIVE_HINTS = True #contrary to actual rules, but this is more fun
-    DEFAULT_EXTRA_CARDS = 0
-    DEFAULT_EXTRA_HINTS = 0
+    DEFAULT_EXTRA_CARDS =      0
+    DEFAULT_EXTRA_HINTS =      0
+
+    #short forms for handling user-input commmands.  MUST NOT REPEAT
+    RAINBOW_ENABLED_SHORT_FORM =  're'
+    RAINBOW_HINT_SHORT_FORM =     'rh'
+    RAINBOW_PLAY_SHORT_FORM =     'rp'
+    BOMBS_GIVE_HINTS_SHORT_FORM = 'bgh'
+    EXTRA_CARDS_SHORT_FORM =      'ec'
+    EXTRA_HINTS_SHORT_FORM =      'eh'
+
+    RAINBOW_ENABLED_DESC = \
+        'Determines whether the game will be played with rainbow (Multicolor) cards.\n'\
+        'If True, rainbow cards will be used.  If False, they will not.\n'\
+        'When True, enables the rules for handling rainbow cards.'
+    RAINBOW_HINT_DESC = \
+        'Determines whether rainbow (Multicolor) cards are wild when hinted.\n'\
+        'If "wild", rainbow cards will always be treated as matching\n'\
+        'the color of a hint, and the rainbow color cannot be hinted.\n'\
+        'If "suit", rainbow can be hinted and only matches hints of\n'\
+        'rainbow color.  Rule available only if rainbow_enabled is True.'
+    RAINBOW_PLAY_DESC = \
+        'Determines whether rainbow (Multicolor) cards play into a separate suit\n'\
+        '(when set to "suit") or whether they are wild when played\n'\
+        '(when set to "wild").  A "wild" rainbow card can add to any\n'\
+        'color\'s firework for which its number is valid when played,\n'\
+        'determined by the player playing the card.  A "suit" rainbow\n'\
+        'card plays into a rainbow suit.'
+    BOMBS_GIVE_HINTS_DESC = \
+        'Determines whether wrongly played cards (triggering a misfire)\n'\
+        'give a hint.  If True, a misfired card will restore a hint if\n'\
+        'hints are below maximum.  If False, this will not happen.'
+    EXTRA_CARDS_DESC = \
+        'Modifies the number of cards each player is dealt and holds.\n'\
+        'Negative numbers reduce hand size.'
+    EXTRA_HINTS_DESC = \
+        f'Modifies the number of hints the players start with.\n'\
+        f'Negative numbers reduce the number of hints.  Notably,\n'\
+        f'the maximum number of hints (8) is not affected.\n'\
+        f'Starting hints in excess of maximum are not lost until used\n'\
+        f'but cannot be replenished, since discarding is illegal if\n'\
+        f'the number of hints would be brought above maximum.'
 
     def __init__(self, rainbow_enabled=DEFAULT_RAINBOW_ENABLED,
-                       rainbow_wild_hint=DEFAULT_WILD_HINT,
+                       rainbow_hint=DEFAULT_RAINBOW_HINT,
                        rainbow_play=DEFAULT_RAINBOW_PLAY,
                        bombs_give_hints=DEFAULT_BOMBS_GIVE_HINTS,
                        extra_cards=DEFAULT_EXTRA_CARDS,
                        extra_hints=DEFAULT_EXTRA_HINTS):
-        #treatment of rainbow cards
-        if rainbow_enabled in self.RAINBOW_ENABLED_OPTIONS:
-            self.rainbow_enabled = rainbow_enabled
-        else:
+
+        self.rainbow_enabled = HanabiRule(rainbow_enabled, self.RAINBOW_ENABLED_SHORT_FORM, \
+                                       self.RAINBOW_ENABLED_OPTIONS, self.RAINBOW_ENABLED_DESC)
+        if self.rainbow_enabled.value not in self.rainbow_enabled.allowed_values:
             raise ValueError(f'rainbow_enabled must be one of {self.RAINBOW_ENABLED_OPTIONS}.')
-        if rainbow_wild_hint in self.RAINBOW_WILD_HINT_OPTIONS:
-            self.rainbow_wild_hint = rainbow_wild_hint
-        else:
-            raise ValueError(f'rainbow_wild_hint must be one of {self.RAINBOW_WILD_HINT_OPTIONS}.')
-        if rainbow_play in self.RAINBOW_PLAY_OPTIONS:
-            self.rainbow_play = rainbow_play
-        else:
+
+        self.rainbow_hint = HanabiRule(rainbow_hint, self.RAINBOW_HINT_SHORT_FORM, \
+                                       self.RAINBOW_HINT_OPTIONS, self.RAINBOW_HINT_DESC)
+        if self.rainbow_hint.value not in self.rainbow_hint.allowed_values:
+            raise ValueError(f'rainbow_hint must be one of {self.RAINBOW_HINT_OPTIONS}.')
+
+        self.rainbow_play = HanabiRule(rainbow_play, self.RAINBOW_PLAY_SHORT_FORM, \
+                                       self.RAINBOW_PLAY_OPTIONS, self.RAINBOW_PLAY_DESC)
+        if self.rainbow_play.value not in self.rainbow_play.allowed_values:
             raise ValueError(f'rainbow_play must be one of {self.RAINBOW_PLAY_OPTIONS}.')
-        #modifications
-        if bombs_give_hints in self.BOMBS_GIVE_HINTS_OPTIONS:
-            self.bombs_give_hints = bombs_give_hints
-        else:
-            raise ValueError('bombs_give_hints must be one of {self.BOMBS_GIVE_HINTS}.')
-        if extra_cards in self.EXTRA_CARDS_OPTIONS: self.extra_cards = extra_cards
-        else: raise ValueError('extra_cards must be one of {self.EXTRA_CARDS_OPTIONS}.')
-        if extra_hints in self.EXTRA_HINTS_OPTIONS: self.extra_hints = extra_hints
-        else: raise ValueError('extra_hints must be one of {self.EXTRA_HINTS_OPTIONS}')
+
+        self.bombs_give_hints = HanabiRule(bombs_give_hints, self.BOMBS_GIVE_HINTS_SHORT_FORM, \
+                                     self.BOMBS_GIVE_HINTS_OPTIONS, self.BOMBS_GIVE_HINTS_DESC)
+        if self.bombs_give_hints.value not in self.bombs_give_hints.allowed_values:
+            raise ValueError(f'bombs_give_hints must be one of {self.BOMBS_GIVE_HINTS_OPTIONS}.')
+
+        self.extra_cards = HanabiRule(extra_cards, self.EXTRA_CARDS_SHORT_FORM, \
+                                      self.EXTRA_CARDS_OPTIONS, self.EXTRA_CARDS_DESC)
+        if self.extra_cards.value not in self.extra_cards.allowed_values:
+            raise ValueError(f'extra_cards must be one of {self.EXTRA_CARDS_OPTIONS}.')
+
+        self.extra_hints = HanabiRule(extra_hints, self.EXTRA_HINTS_SHORT_FORM, \
+                                      self.EXTRA_HINTS_OPTIONS, self.EXTRA_HINTS_DESC)
+        if self.extra_hints.value not in self.extra_hints.allowed_values:
+            raise ValueError(f'extra_hints must be one of {self.EXTRA_HINTS_OPTIONS}.')
+
+    def change_rule(self, rule, value):
+        """
+        Change a user-chosen rule to the user-chosen value, or fail if the (rule, value)
+        pair is not appropriate.  rule and value are user-input strings which must be
+        converted to the appropriate format.
+        """
+        try: k, v = self._get_rule(rule)
+        except KeyError as e: raise HanabiSimException(f'No such rule: "{rule}".')
+        match k:
+            case 'rainbow_enabled' | 'bombs_give_hints':
+                new_value = not v.value if value is None else \
+                            True if 'true'.startswith(value.lower()) else \
+                            False if 'false'.startswith(value.lower()) else value
+            case 'rainbow_hint' | 'rainbow_play' if self['rainbow_enabled']:
+                new_value = (v.allowed_values - {v.value}).pop() if value is None else \
+                            'suit' if 'suit'.startswith(value.lower()) else \
+                            'wild' if 'wild'.startswith(value.lower()) else value
+            case 'rainbow_hint' | 'rainbow_play' if not self['rainbow_enabled']:
+                raise HanabiRulesException('No rainbows in this game to toggle the handling of.')
+            case 'extra_cards' | 'extra_hints':
+                try: new_value = int(value)
+                except ValueError as e:
+                    raise HanabiSimException(f'Invalid option {value} for rule {k}')
+                except TypeError as e:
+                    raise HanabiSimException(f'You must input a value to give the rule.')
+
+        if new_value not in v.allowed_values:
+            raise HanabiRulesException(f'Invalid option {value} for rule {k}.')
+        new_rule = HanabiRule(**(v._asdict() | {'value' : new_value}))
+        setattr(self, k, new_rule)
+        #reset rainbow_hint and rainbow_play if we've turned rainbows off
+        if k == 'rainbow_enabled' and new_value == False:
+            self.rainbow_hint = HanabiRule(
+                **(self.rainbow_hint._asdict() | {'value' : self.DEFAULT_RAINBOW_HINT})
+            )
+            self.rainbow_play = HanabiRule(
+                **(self.rainbow_play._asdict() | {'value' :self.DEFAULT_RAINBOW_PLAY})
+            )
+
+    def get_description(self, key):
+        _, v = self._get_rule(key)
+        return v.description
+
+    def _get_rule(self, key):
+        try:
+            return key, vars(self)[key]
+        except:
+            candidates = [(k, v) for k, v in vars(self).items() if isinstance(v, HanabiRule) \
+                                                              and v.short_form == key]
+            if not candidates: raise KeyError(f'{key}: no such rule found.')
+            if len(candidates) > 1: raise Exception('Two rules share a short form.')
+            return candidates.pop()
+       
+    def __getitem__(self, key):
+        _, v = self._get_rule(key)
+        return v.value
 
     def __str__(self):
         header = ['rule', 'short form', 'current value', 'possible values']
         rows = [
-            ['rainbow_enabled', 're', self.rainbow_enabled, self.RAINBOW_ENABLED_OPTIONS],
-            ['rainbow_wild_hint', 'rwh', self.rainbow_wild_hint, self.RAINBOW_WILD_HINT_OPTIONS],
-            ['rainbow_play', 'rp', self.rainbow_play, self.RAINBOW_PLAY_OPTIONS],
-            ['bombs_give_hints', 'bgh', self.bombs_give_hints, self.BOMBS_GIVE_HINTS_OPTIONS],
-            ['extra_cards', 'ec', self.extra_cards, self.EXTRA_CARDS_OPTIONS],
-            ['extra_hints', 'eh', self.extra_hints, self.EXTRA_HINTS_OPTIONS]
+            ['rainbow_enabled', self.rainbow_enabled.short_form,
+                 self.rainbow_enabled.value, self.RAINBOW_ENABLED_OPTIONS],
+            ['rainbow_hint', self.rainbow_hint.short_form,
+                 self.rainbow_hint.value, self.RAINBOW_HINT_OPTIONS],
+            ['rainbow_play', self.rainbow_play.short_form,
+                 self.rainbow_play.value, self.RAINBOW_PLAY_OPTIONS],
+            ['bombs_give_hints', self.bombs_give_hints.short_form,
+                 self.bombs_give_hints.value, self.BOMBS_GIVE_HINTS_OPTIONS],
+            ['extra_cards', self.extra_cards.short_form,
+                 self.extra_cards.value, self.EXTRA_CARDS_OPTIONS],
+            ['extra_hints', self.extra_hints.short_form,
+                 self.extra_hints.value, self.EXTRA_HINTS_OPTIONS]
         ]
-        if not self.rainbow_enabled:
+        if not self['rainbow_enabled']:
             del rows[2]
             del rows[1]
         return tabulate(rows, headers=header, tablefmt='pretty')
@@ -199,7 +310,7 @@ class UnknownCard:
     def __init__(self, round_drawn, turn_drawn, rules):
         if rules:
             self.colors = {color for color in (Color)}
-            if not rules.rainbow_enabled: self.colors.discard(Color.MULTICOLOR)
+            if not rules['rainbow_enabled']: self.colors.discard(Color.MULTICOLOR)
         self.numbers = {*range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1)}
         self.round_drawn = round_drawn
         self.color_guess = None
@@ -212,14 +323,15 @@ class UnknownCard:
         Update a card as a result of a color hint which mentions the card explicitly;
         for example, a hint which tells this card is blue.
         """
-        if rules.rainbow_wild_hint:
+        if rules['rainbow_hint'] == 'wild':
             if color == color.MULTICOLOR:
-                raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} when in wild-hint mode.')
+                raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} in wild-hint mode.')
             if not (color in self.colors or Color.MULTICOLOR in self.colors):
-                raise HanabiSimException(f'Inconsistent hints: color '\
-                                     f'{style_text(color, color.name)}'\
-                                     f' would disqualify all possible colors.\nThe card:\n'\
-                                     f'{str(self)}')
+                raise HanabiSimException(
+                    f'Inconsistent hints: color {style_text(color, color.name)}'\
+                    f' would disqualify all possible colors.\nThe card:\n'\
+                    f'{str(self)}'
+                )
             if self.colors <= {color, Color.MULTICOLOR}: return self #nothing to do
             new_state = self.copy()
             #remove all colors which aren't the hinted color or rainbow
@@ -227,11 +339,13 @@ class UnknownCard:
             new_state.previous_states.append(self)
             new_state.round_updated, new_state.turn_updated = (rnd, trn)
             return new_state
-        # not rules.rainbow_wild_hint
+        #rules['rainbow_hint'] == 'suit'
         if (color not in self.colors):
-            raise HanabiSimException(f'Inconsistent hints: color {style_text(color, color.name)}'\
-                                     f' was previously ruled out for a hinted card.\nThe card:\n'\
-                                     f'{str(self)}')
+            raise HanabiSimException(
+                f'Inconsistent hints: color {style_text(color, color.name)}'\
+                f' was previously ruled out for a hinted card.\nThe card:\n'\
+                f'{str(self)}'
+            )
         if self.colors == {color}: return self #nothing to do
         new_state = self.copy()
         new_state.colors = {color}
@@ -244,28 +358,31 @@ class UnknownCard:
         Update a card as a result of a color hint which mentions only other cards;
         for example, a hint which tells another card card is red.
         """
-        if rules.rainbow_wild_hint:
+        if rules['rainbow_hint'] == 'wild':
             if color == color.MULTICOLOR:
-                raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} when in wild-hint mode.')
+                raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} in wild-hint mode.')
             if not (color in self.colors or Color.MULTICOLOR in self.colors): return self #n.t.d.
             new_state = self.copy()
             new_state.colors = new_state.colors - {color, Color.MULTICOLOR}
             if len(new_state.colors) == 0:
-                raise HanabiSimException(f'Inconsistent hints: color '\
-                                     f'{style_text(color, color.name)}'\
-                                     f' would disqualify all possible colors.\nThe card:\n'\
-                                     f'{str(self)}')
+                raise HanabiSimException(
+                    f'Inconsistent hints: color {style_text(color, color.name)}'\
+                    f' would disqualify all possible colors.\nThe card:\n'\
+                    f'{str(self)}'
+                )
             new_state.previous_states.append(self)
             new_state.round_updated, new_state.turn_updated = (rnd, trn)
             return new_state
-            
+        # rules['rainbow_hint'] == 'suit' 
         if (color not in self.colors): return self #nothing to do
         new_state = self.copy()
         new_state.colors.discard(color)
         if len(new_state.colors) == 0:
-            raise HanabiSimException(f'Inconsistent hints; color {style_text(color, color.name)}'\
-                                     f' was the only possible color for a non-hinted card.\n'\
-                                     f'The card:\n{str(self)}') 
+            raise HanabiSimException(
+                f'Inconsistent hints; color {style_text(color, color.name)}'\
+                f' was the only possible color for a non-hinted card.\n'\
+                f'The card:\n{str(self)}'
+            ) 
         new_state.previous_states.append(self)
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
@@ -276,9 +393,10 @@ class UnknownCard:
         for example, a hint which tells this card has value 3.
         """
         if (number not in self.numbers):
-            raise HanabiSimException(f'Inconsistent hints; number {number} was '\
-                                     f'previously ruled out for a hinted card.\n'\
-                                     f'The card:\n{str(self)}')
+            raise HanabiSimException(
+                f'Inconsistent hints; number {number} was previously ruled out '\
+                d'for a hinted card.\nThe card:\n{str(self)}'
+            )
         if self.numbers == {number}: return self #nothing to do
         new_state = self.copy()
         new_state.numbers = {number}
@@ -295,9 +413,10 @@ class UnknownCard:
         new_state = self.copy()
         new_state.numbers.discard(number)
         if len(new_state.numbers) == 0:
-            raise HanabiSimException(f'Inconsistent hints; number {number} was the '\
-                                     f'only possible number for a non-hinted card.\n'\
-                                     f'The card:\n{str(self)}')
+            raise HanabiSimException(
+                f'Inconsistent hints; number {number} was the only possible '\
+                f'number for a non-hinted card.\nThe card:\n{str(self)}'
+            )
         new_state.previous_states.append(self)
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
@@ -309,8 +428,8 @@ class UnknownCard:
         Apply a player's guess of number to a card; example, the player guesses a card has value 1.
         """
         if (number not in self.numbers):
-            raise HanabiSimException(f'Bad guess; number {number} was previously '\
-                                     f'ruled out for guessed card.')
+            raise HanabiSimException(
+                f'Bad guess; number {number} was previously ruled out for guessed card.')
         if number == self.number_guess: return self #nothing to do
         new_state = self.copy()
         new_state.number_guess = number
@@ -322,8 +441,10 @@ class UnknownCard:
         Apply a player's guess of color to a card; example, the player guesses a card is green.
         """
         if (color not in self.colors):
-            raise HanabiSimException(f'Bad guess; color {style_text(color, color.name)} '\
-                                     f'was previously ruled out for guessed card.')
+            raise HanabiSimException(
+                f'Bad guess; color {style_text(color, color.name)} '\
+                f'was previously ruled out for guessed card.'
+            )
         if color == self.color_guess: return self #nothing to do
         new_state = self.copy()
         new_state.color_guess = color
@@ -346,16 +467,20 @@ class UnknownCard:
             guess_text(number, str(number)) if number == self.number_guess
             else str(number) for number in self.numbers
         ])
-        rep = tabulate([[f'RD: {self.round_drawn}'],
-                        [colorstr],
-                        [f'RU: {self.round_updated}'],
-                        [f'TU: {self.turn_updated}'],
-                        [numberstr]], \
-                        tablefmt='pretty')
+        rep = tabulate(
+            [
+                [f'RD: {self.round_drawn}'],
+                [colorstr],
+                [f'RU: {self.round_updated}'],
+                [f'TU: {self.turn_updated}'],
+                [numberstr]
+            ], \
+            tablefmt='pretty'
+        )
         return rep
 
     def show_past_states(self):
-        fake_hand = Hand(0, None) #a bit of a hack, but we basically want the same representation
+        fake_hand = Hand(0, None) #a hack, but we basically want the same representation
         fake_hand.hand = [*self.previous_states, self]
         return str(fake_hand)
 
@@ -393,14 +518,16 @@ class RealizedCard:
     """
     A card of known value or number because it was played or discarded.
     """
-    def __init__(self, identity, unrealized_state):
+    def __init__(self, identity, unrealized_state, was_rainbow = False):
         self.identity = identity #Card object
         self.unrealized_state = unrealized_state #UnknownCard object
+        self.was_rainbow = was_rainbow #if this was a wild-play rainbow card
 
     def __eq__(self, other):
         if not isinstance(other, RealizedCard): return False
         return self.identity == other.identity and \
-               self.unrealized_state == other.unrealized_state
+               self.unrealized_state == other.unrealized_state and \
+               self.was_rainbow == other.was_rainbow
 
 
 class Hand:
@@ -421,7 +548,7 @@ class Hand:
         new_hand = self.copy()
         for i, card in enumerate(self.hand):
             if isinstance(hint, Color):
-                if hint == Color.MULTICOLOR and not rules.rainbow_enabled:
+                if hint == Color.MULTICOLOR and not rules['rainbow_enabled']:
                     raise HanabiSimException(f'This game does not have {Color.MULTICOLOR} cards.')
                 try: 
                     new_hand.hand[i] = card.hint_color_positive(hint, r, t, rules) if i in positions \
@@ -444,7 +571,7 @@ class Hand:
                 raise HanabiSimException(f'Bad guess; number {number} already disqualified.')
             new_card_state = card.guess_number(guess)
         elif isinstance(guess, Color):
-            if guess == Color.MULTICOLOR and not rules.rainbow_enabled:
+            if guess == Color.MULTICOLOR and not rules['rainbow_enabled']:
                 raise HanabiSimException(f'This game doe not have {Color.MULTICOLOR} cards.')
             if guess not in card.colors:
                 raise HanabiSimException(f'Bad guess; color {style_text(color, color.name)} '
@@ -540,7 +667,7 @@ class PlayedCards:
     def __init__(self, rules):
         self.cards = {color : Card(color, 0) for color in (Color)}
         #if rainbows do not play into a suit, do not track them
-        if not (rules.rainbow_enabled and rules.rainbow_play == 'suit'):
+        if not (rules['rainbow_enabled'] and rules['rainbow_play'] == 'suit'):
             del self.cards[Color.MULTICOLOR]
         self.rules = rules
 
@@ -581,7 +708,7 @@ class OutstandingCards:
 
         for color in Color:
             #if the game contains no rainbow cards, do not track them
-            if color == Color.MULTICOLOR and not self.rules.rainbow_enabled: continue
+            if color == Color.MULTICOLOR and not self.rules['rainbow_enabled']: continue
             for i in range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1):
                 for j in range(CARD_FREQUENCIES[i - 1]):
                    self.cards.append(Card(color, i))
@@ -596,16 +723,16 @@ class OutstandingCards:
 
     def __str__(self):
         data = [[style_text(color, color.name) for color in Color \
-                 if (color != Color.MULTICOLOR or self.rules.rainbow_enabled)]]
+                 if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])]]
         #Sort outstanding cards by color
         columns = [ [*filter(lambda card: card.color == color, self.cards)] for color in Color \
-                    if (color != Color.MULTICOLOR or self.rules.rainbow_enabled) ]
+                    if (color != Color.MULTICOLOR or self.rules['rainbow_enabled']) ]
         table_length = max([len(col) for col in columns])
         #Create table rows.  Each row is the next card number of that color, or empty if no
         #cards of that color remain.
         for i in range(table_length):
             row = [columns[j][i] if len(columns[j]) >= i + 1 else ' ' 
-                   for j in range(len(Color) - (0 if self.rules.rainbow_enabled else 1))]
+                   for j in range(len(Color) - (0 if self.rules['rainbow_enabled'] else 1))]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
     
@@ -624,7 +751,7 @@ class DiscardedCards:
     def __init__(self, rules):
         self.cards = {color : [] for color in (Color)}
         #if the game contains no rainbow cards, do not track them
-        if not rules.rainbow_enabled: del self.cards[Color.MULTICOLOR]
+        if not rules['rainbow_enabled']: del self.cards[Color.MULTICOLOR]
         self.rules = rules
 
     def add(self, card):
@@ -643,14 +770,14 @@ class DiscardedCards:
         table_length = max([len(l) for l in self.cards.values()])
 
         header = [style_text(color, color.name) for color in Color \
-                  if (color != Color.MULTICOLOR or self.rules.rainbow_enabled)]
+                  if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])]
         data = [header]
         for i in range(table_length):
             #Create table rows.  Each row is the next card number of that color, or empty if no
             #cards of that color remain.
             row = [self.cards[color][i] if len(self.cards[color]) >= i + 1 else ' ' \
                    for color in Color \
-                   if (color != Color.MULTICOLOR or self.rules.rainbow_enabled)]
+                   if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
 
@@ -705,7 +832,7 @@ class GameState:
     def __init__(self, players=default_players, protocols=default_protocols, ruleset=default_rules):
         self.rules = ruleset
         self.misfires = self.STARTING_MISFIRES
-        self.hints = self.STARTING_HINTS + self.rules.extra_hints
+        self.hints = self.STARTING_HINTS + self.rules['extra_hints']
         self.player_up = self.STARTING_PLAYER_UP
         self.round = self.STARTING_ROUND
         self.num_players = len(players)
@@ -715,7 +842,11 @@ class GameState:
         if (len(protocols) != self.num_players):
             raise HanabiSimException(f'There must be exactly one protocol per player (players: '\
                                      f'{self.num_players}; protocols: {len(protocols)})')
-        self.players = [Player(name, self.HAND_SIZES[self.num_players] + self.rules.extra_cards, self.rules, protocol) \
+        self.players = [Player(name, \
+                               self.HAND_SIZES[self.num_players] + \
+                               self.rules['extra_cards'], self.rules, \
+                               protocol \
+                        ) \
                         for name, protocol in zip(players, protocols)]
         self.outstanding_cards = OutstandingCards(self.rules)
         self.play = PlayedCards(self.rules)
@@ -839,7 +970,7 @@ class Player:
             errstr = f'The card identity {card} which you gave was not possible '\
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
-        if card.color == Color.MULTICOLOR and not game.rules.rainbow_enabled:
+        if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
             raise HanabiSimException(f'The rules of this game do not allow {Color.MULTICOLOR} cards.')
         new_state = game.copy()
         new_state.hints += 1
@@ -878,18 +1009,18 @@ class Player:
             errstr = f'The card identity {card} which you gave was not possible '\
                      f'given prior hints.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
-        if card.color == Color.MULTICOLOR and not game.rules.rainbow_enabled:
+        if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
             raise HanabiSimException(f'The rules of this game do not allow {Color.MULTICOLOR} cards.')
         new_state = game.copy()
         #user must choose which suit wild rainbow will count as, if any is possible
-        if card.color == Color.MULTICOLOR and game.rules.rainbow_play == 'wild':
+        if card.color == Color.MULTICOLOR and game.rules['rainbow_play'] == 'wild':
             valid_colors = [c.color for c in game.play.values() if c.number + 1 == card.number]
             #no possible colors to play to; misfire
             if not valid_colors:
                 new_state.turns_taken.append(MisfireAction(card, self.hand[position]))
                 new_state.misfires += 1
                 new_state.over = new_state.misfires > new_state.MAX_MISFIRES
-                if game.rules.bombs_give_hints:
+                if game.rules['bombs_give_hints']:
                     new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
                 new_state.discard = new_state.discard.add(card)
             else:
@@ -912,7 +1043,7 @@ class Player:
                     if all([c.number == MAX_CARD_VALUE for c in new_state.play.values()]):
                         new_state.over = True
             #return new_state
-        else: #card.color != Color.MULTICOLOR or game.rules.rainbow_play == 'suit'
+        else: #card.color != Color.MULTICOLOR or game.rules['rainbow_play'] == 'suit'
             #successful play
             if (card.number == new_state.play[card.color].number + 1):
                 new_state.turns_taken.append(PlayAction(card, self.hand[position]))
@@ -926,7 +1057,7 @@ class Player:
                 new_state.turns_taken.append(MisfireAction(card, self.hand[position]))
                 new_state.misfires += 1
                 new_state.over = new_state.misfires > new_state.MAX_MISFIRES
-                if game.rules.bombs_give_hints:
+                if game.rules['bombs_give_hints']:
                     new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
                 new_state.discard = new_state.discard.add(card)
         #update outstanding and replenish in any event
