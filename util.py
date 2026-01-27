@@ -65,11 +65,14 @@ def get_rules(setup_choices, outfile, color_picker):
         rule = trim_comment(rule, COMMENT_START).strip().split()
         match rule:
             case ['?']:
-                helpstr = 'To print rules, use "print rules" or just \'p\' for short.\n'\
-                          'To comfirm current rules and continue, leave blank.\n'\
-                          'To change a rule, type the rule name or short form and the new value to give it.\n'\
-                          'To explain what a rule does, type "explain <rulename|short form>".\n'\
-                          'For rules with only two possible values, giving no value toggles between options.'
+                helpstr = \
+                    'To print rules, use "print rules" or just \'p\' for short.\n'\
+                    'To comfirm current rules and continue, leave blank.\n'\
+                    'To change a rule, type the rule name or short '\
+                    'form and the new value to give it.\n'\
+                    'To explain what a rule does, type "explain <rulename|short form>".\n'\
+                    'For rules with only two possible values, giving '\
+                    'no value toggles between options.'
                 print(helpstr)
             case []:
                 done = True
@@ -87,66 +90,7 @@ def get_rules(setup_choices, outfile, color_picker):
                 except (HanabiSimException, HanabiRulesException) as e: print(e.args[0])
                 #except TypeError as e: print('Aditional input required.')
                 except HanabiRulesException as e: print(e.args[0])
-                
-#           case ['rainbow_enabled', *arg] | ['re', *arg]:
-#               try:
-#                   rules.change_rule()
-#                   new_value = not rules.rainbow_enabled if not arg        else \
-#                               True  if 'true'.startswith(arg[0].lower())  else \
-#                               False if 'false'.startswith(arg[0].lower()) else \
-#                               1 / 0 #raise exception to fail TODO be smarter
-#                   rules.rainbow_enabled = new_value
-#                   print('Success.')
-#               except: print('Failure; invalid value.')
-#           case ['rainbow_wild_hint', *arg] | ['rwh', *arg] if rules.rainbow_enabled:
-#               try:
-#                   new_value = not rules.rainbow_wild_hint if not arg      else \
-#                               True  if 'true'.startswith(arg[0].lower())  else \
-#                               False if 'false'.startswith(arg[0].lower()) else \
-#                               1 / 0 #TODO be smarter
-#                   rules.rainbow_wild_hint = new_value
-#                   print('Success.')
-#               except: print('Failure; invalid value.')
-#           case ['rainbow_wild_hint', *arg] | ['rwh', *arg]:
-#               print('No rainbows in the game; to enable, toggle "rainbow_enabled".')
-#           case ['rainbow_play', *arg] | ['rp', *arg] if rules.rainbow_enabled:
-#               try:
-#                   new_value = (rules.RAINBOW_PLAY_OPTIONS - {rules.rainbow_play}).pop() if not arg else \
-#                               'suit' if 'suit'.startswith(arg[0].lower()) else \
-#                               'wild' if 'wild'.startswith(arg[0].lower()) else \
-#                               1 / 0 #TODO be smarter
-#                   rules.rainbow_play = new_value
-#                   print('Success.')
-#               except: print('Failure; invalid value.')
-#           case ['rainbow_play', *arg] | ['rp', *arg]:
-#               print('No rainbows in the game; to enable, toggle "rainbow_enabled".')
-#           case ['bombs_give_hints', *arg] | ['bgh', *arg]:
-#               try:
-#                   new_value = not rules.bombs_give_hints if not arg       else \
-#                               True  if 'true'.startswith(arg[0].lower())  else \
-#                               False if 'false'.startswith(arg[0].lower()) else \
-#                               1 / 0 #TODO be smarter
-#                   rules.bombs_give_hints = new_value
-#                   print('Success.')
-#               except: print('Failure; invalid value.')
-#           case ['extra_cards', arg] | ['ec', arg]:
-#               try:
-#                   if int(arg) in rules.EXTRA_CARDS_OPTIONS:
-#                       rules.extra_cards = int(arg)
-#                       print('Success.')
-#                   else: raise
-#               except: print('Failure; invalid value.')
-#           case ['extra_hints', arg] | ['eh', arg]:
-#               try:
-#                   if int(arg) in rules.EXTRA_HINTS_OPTIONS:
-#                       rules.extra_hints = int(arg)
-#                       print('Success.')
-#                   else: raise
-#               except: print('Failure; invalid value.')
-            case _:
-                print('Unrecognized action.')
     return rules
-                
 
 def get_players(setup_choices, outfile, color_picker):
     """

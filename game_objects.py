@@ -89,8 +89,9 @@ class HanabiRuleset:
     RAINBOW_HINT_OPTIONS =     {'wild', 'suit'}
     RAINBOW_PLAY_OPTIONS =     {'wild', 'suit'}
     BOMBS_GIVE_HINTS_OPTIONS = {True, False}
-    EXTRA_CARDS_OPTIONS =      {-1, 0, 1}
+    EXTRA_CARDS_OPTIONS =      range(-1, 2)
     EXTRA_HINTS_OPTIONS =      range(-8, 4)
+    GAME_END_OPTIONS =         {'until_done','final_round'}
 
     DEFAULT_RAINBOW_ENABLED =  False
     DEFAULT_RAINBOW_HINT =     'suit'
@@ -98,6 +99,7 @@ class HanabiRuleset:
     DEFAULT_BOMBS_GIVE_HINTS = True #contrary to actual rules, but this is more fun
     DEFAULT_EXTRA_CARDS =      0
     DEFAULT_EXTRA_HINTS =      0
+    DEFAULT_GAME_END =         'until_done'
 
     #short forms for handling user-input commmands.  MUST NOT REPEAT
     RAINBOW_ENABLED_SHORT_FORM =  're'
@@ -106,24 +108,25 @@ class HanabiRuleset:
     BOMBS_GIVE_HINTS_SHORT_FORM = 'bgh'
     EXTRA_CARDS_SHORT_FORM =      'ec'
     EXTRA_HINTS_SHORT_FORM =      'eh'
+    GAME_END_SHORT_FORM =         'ge'
 
     RAINBOW_ENABLED_DESC = \
-        'Determines whether the game will be played with rainbow (Multicolor) cards.\n'\
-        'If True, rainbow cards will be used.  If False, they will not.\n'\
-        'When True, enables the rules for handling rainbow cards.'
+        f'Determines whether the game will be played with rainbow ({Color.MULTICOLOR}) cards.\n'\
+        f'If True, rainbow cards will be used.  If False, they will not.\n'\
+        f'When True, enables the rules for handling rainbow cards.'
     RAINBOW_HINT_DESC = \
-        'Determines whether rainbow (Multicolor) cards are wild when hinted.\n'\
-        'If "wild", rainbow cards will always be treated as matching\n'\
-        'the color of a hint, and the rainbow color cannot be hinted.\n'\
-        'If "suit", rainbow can be hinted and only matches hints of\n'\
-        'rainbow color.  Rule available only if rainbow_enabled is True.'
+        f'Determines whether rainbow ({Color.MULTICOLOR}) cards are wild when hinted.\n'\
+        f'If "wild", rainbow cards will always be treated as matching\n'\
+        f'the color of a hint, and the rainbow color cannot be hinted.\n'\
+        f'If "suit", rainbow can be hinted and only matches hints of\n'\
+        f'rainbow color.  Rule available only if rainbow_enabled is True.'
     RAINBOW_PLAY_DESC = \
-        'Determines whether rainbow (Multicolor) cards play into a separate suit\n'\
-        '(when set to "suit") or whether they are wild when played\n'\
-        '(when set to "wild").  A "wild" rainbow card can add to any\n'\
-        'color\'s firework for which its number is valid when played,\n'\
-        'determined by the player playing the card.  A "suit" rainbow\n'\
-        'card plays into a rainbow suit.'
+        f'Determines whether rainbow ({Color.MULTICOLOR}) cards play into a separate suit\n'\
+        f'(when set to "suit") or whether they are wild when played\n'\
+        f'(when set to "wild").  A "wild" rainbow card can add to any\n'\
+        f'color\'s firework for which its number is valid when played,\n'\
+        f'determined by the player playing the card.  A "suit" rainbow\n'\
+        f'card plays into a rainbow suit.'
     BOMBS_GIVE_HINTS_DESC = \
         'Determines whether wrongly played cards (triggering a misfire)\n'\
         'give a hint.  If True, a misfired card will restore a hint if\n'\
@@ -138,13 +141,22 @@ class HanabiRuleset:
         f'Starting hints in excess of maximum are not lost until used\n'\
         f'but cannot be replenished, since discarding is illegal if\n'\
         f'the number of hints would be brought above maximum.'
+    GAME_END_DESC = \
+        f'NOT IMPLEMENTED\n'\
+        f'Determines the nature of the end of the game.  If set to \n'\
+        f'"until_done", the game continues until the players run out of \n'\
+        f'misfires or complete all fireworks.  If set to \n'\
+        f'"final_round", after the last card is drawn, one complete \n'\
+        f'round is taken, ending with the player who drew the last card,\n'\
+        f'at which point the game is over.'
 
-    def __init__(self, rainbow_enabled=DEFAULT_RAINBOW_ENABLED,
-                       rainbow_hint=DEFAULT_RAINBOW_HINT,
-                       rainbow_play=DEFAULT_RAINBOW_PLAY,
-                       bombs_give_hints=DEFAULT_BOMBS_GIVE_HINTS,
-                       extra_cards=DEFAULT_EXTRA_CARDS,
-                       extra_hints=DEFAULT_EXTRA_HINTS):
+    def __init__(self, rainbow_enabled  = DEFAULT_RAINBOW_ENABLED,
+                       rainbow_hint     = DEFAULT_RAINBOW_HINT,
+                       rainbow_play     = DEFAULT_RAINBOW_PLAY,
+                       bombs_give_hints = DEFAULT_BOMBS_GIVE_HINTS,
+                       extra_cards      = DEFAULT_EXTRA_CARDS,
+                       extra_hints      = DEFAULT_EXTRA_HINTS,
+                       game_end         = DEFAULT_GAME_END):
 
         self.rainbow_enabled = HanabiRule(rainbow_enabled, self.RAINBOW_ENABLED_SHORT_FORM, \
                                        self.RAINBOW_ENABLED_OPTIONS, self.RAINBOW_ENABLED_DESC)
@@ -176,6 +188,11 @@ class HanabiRuleset:
         if self.extra_hints.value not in self.extra_hints.allowed_values:
             raise ValueError(f'extra_hints must be one of {self.EXTRA_HINTS_OPTIONS}.')
 
+        self.game_end = HanabiRule(game_end, self.GAME_END_SHORT_FORM, \
+                                   self.GAME_END_OPTIONS, self.GAME_END_DESC)
+        if self.game_end.value not in self.game_end.allowed_values:
+            raise ValueError(f'game_end must be one of {self.GAME_END_OPTIONS}.')
+
     def change_rule(self, rule, value):
         """
         Change a user-chosen rule to the user-chosen value, or fail if the (rule, value)
@@ -195,6 +212,10 @@ class HanabiRuleset:
                             'wild' if 'wild'.startswith(value.lower()) else value
             case 'rainbow_hint' | 'rainbow_play' if not self['rainbow_enabled']:
                 raise HanabiRulesException('No rainbows in this game to toggle the handling of.')
+            case 'game_end':
+                new_value = (v.allowed_values - {v.value}).pop() if value is None else \
+                            'final_round' if 'final_round'.startswith(value.lower()) else \
+                            'until_done' if 'until_done'.startswith(value.lower()) else value
             case 'extra_cards' | 'extra_hints':
                 try: new_value = int(value)
                 except ValueError as e:
@@ -239,15 +260,17 @@ class HanabiRuleset:
             ['rainbow_enabled', self.rainbow_enabled.short_form,
                  self.rainbow_enabled.value, self.RAINBOW_ENABLED_OPTIONS],
             ['rainbow_hint', self.rainbow_hint.short_form,
-                 self.rainbow_hint.value, self.RAINBOW_HINT_OPTIONS],
+                 self.rainbow_hint.value, str(self.RAINBOW_HINT_OPTIONS).replace("'", "")],
             ['rainbow_play', self.rainbow_play.short_form,
-                 self.rainbow_play.value, self.RAINBOW_PLAY_OPTIONS],
+                 self.rainbow_play.value, str(self.RAINBOW_PLAY_OPTIONS).replace("'", "")],
             ['bombs_give_hints', self.bombs_give_hints.short_form,
                  self.bombs_give_hints.value, self.BOMBS_GIVE_HINTS_OPTIONS],
-            ['extra_cards', self.extra_cards.short_form,
-                 self.extra_cards.value, self.EXTRA_CARDS_OPTIONS],
-            ['extra_hints', self.extra_hints.short_form,
-                 self.extra_hints.value, self.EXTRA_HINTS_OPTIONS]
+            ['extra_cards', self.extra_cards.short_form, self.extra_cards.value,
+                f'[{self.EXTRA_CARDS_OPTIONS.start}, {self.EXTRA_CARDS_OPTIONS.stop - 1}]'],
+            ['extra_hints', self.extra_hints.short_form, self.extra_hints.value, 
+                f'[{self.EXTRA_HINTS_OPTIONS.start}, {self.EXTRA_HINTS_OPTIONS.stop - 1}]'],
+            ['game_end', self.game_end.short_form,
+                 self.game_end.value, str(self.GAME_END_OPTIONS).replace("'", "")]
         ]
         if not self['rainbow_enabled']:
             del rows[2]
@@ -395,7 +418,7 @@ class UnknownCard:
         if (number not in self.numbers):
             raise HanabiSimException(
                 f'Inconsistent hints; number {number} was previously ruled out '\
-                d'for a hinted card.\nThe card:\n{str(self)}'
+                f'for a hinted card.\nThe card:\n{str(self)}'
             )
         if self.numbers == {number}: return self #nothing to do
         new_state = self.copy()
@@ -554,7 +577,7 @@ class Hand:
                     new_hand.hand[i] = card.hint_color_positive(hint, r, t, rules) if i in positions \
                                        else card.hint_color_negative(hint, r, t, rules)
                 except HanabiSimException  as e: raise HanabiIndexException(i, *e.args)
-                except HanabRulesException as e: raise e
+                except HanabiRulesException as e: raise e
             else:
                 try:
                     new_hand.hand[i] = card.hint_number_positive(hint, r, t) if i in positions \
@@ -965,13 +988,13 @@ class Player:
             errstr = 'the position given was not in range.\n'\
                      f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
             raise HanabiIndexException(position, errstr)
+        if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
+            raise HanabiSimException(f'This game has no {Color.MULTICOLOR} cards.')
         if card.color  not in self.hand[position].colors or\
            card.number not in self.hand[position].numbers:
             errstr = f'The card identity {card} which you gave was not possible '\
-                     f'given prior hints.\nThe card:\n{str(self.hand[position])}'
+                     f'given its possible states.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
-        if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
-            raise HanabiSimException(f'The rules of this game do not allow {Color.MULTICOLOR} cards.')
         new_state = game.copy()
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
@@ -1004,14 +1027,20 @@ class Player:
             errstr = 'the position you specified was not in range.\n'\
                      f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
             raise HanabiIndexException(position, errstr)
+        if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
+            raise HanabiSimException(f'This game has no {Color.MULTICOLOR} cards.')
         if card.color not in self.hand[position].colors or \
            card.number not in self.hand[position].numbers:
             errstr = f'The card identity {card} which you gave was not possible '\
-                     f'given prior hints.\nThe card:\n{str(self.hand[position])}'
+                     f'given its possible states.\nThe card:\n{str(self.hand[position])}'
             raise HanabiIndexException(position, errstr)
-        if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
-            raise HanabiSimException(f'The rules of this game do not allow {Color.MULTICOLOR} cards.')
         new_state = game.copy()
+        try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
+        except ValueError:
+            errstr = f'The card you specified, {card}, is exhausted '\
+                     f'by prior plays and discards.  See "show outstanding".' 
+            raise HanabiSimException(errstr)
+
         #user must choose which suit wild rainbow will count as, if any is possible
         if card.color == Color.MULTICOLOR and game.rules['rainbow_play'] == 'wild':
             valid_colors = [c.color for c in game.play.values() if c.number + 1 == card.number]
@@ -1023,26 +1052,13 @@ class Player:
                 if game.rules['bombs_give_hints']:
                     new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
                 new_state.discard = new_state.discard.add(card)
+            #possible colors; kick this upstairs to get user to decide
             else:
-                table = [ [i + 1, color] for i, color in enumerate(valid_colors)]
-                print(tabulate(table, tablefmt='pretty'))
-                color_choice = input('Choose which color to apply this card to (choose a color by number from the above table):')
-                try:
-                    color = table[int(color_choice) - 1][1]
-                except IndexError as e:
-                    errstr = f'The number you supplied was not valid; '\
-                             f'a number in the table ({table[0][0]} to {table[-1][0]})is required.'
-                    raise HanabiSimException(errstr)
-                
-                new_state.turns_taken.append(PlayAction(card, self.hand[position]))
-                #add to the chosen color's play; consider the rainbow card discarded
-                new_state.play = new_state.play.add(Card(color, card.number))
-                new_state.discard = new_state.discard.add(card)
-                if card.number == MAX_CARD_VALUE:
-                    new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
-                    if all([c.number == MAX_CARD_VALUE for c in new_state.play.values()]):
-                        new_state.over = True
-            #return new_state
+                table = tabulate(
+                    [[i + 1, color] for i, color in enumerate(valid_colors)],
+                    tablefmt='pretty'
+                )
+                raise HanabiUserInputRequiredException(valid_colors, card, position, table)
         else: #card.color != Color.MULTICOLOR or game.rules['rainbow_play'] == 'suit'
             #successful play
             if (card.number == new_state.play[card.color].number + 1):
@@ -1060,12 +1076,35 @@ class Player:
                 if game.rules['bombs_give_hints']:
                     new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
                 new_state.discard = new_state.discard.add(card)
-        #update outstanding and replenish in any event
-        try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
-        except ValueError:
-            errstr = f'The card you specified, {card}, is exhausted '\
-                     f'by prior plays and discards. (see "show outstanding")' 
-            raise HanabiSimException(errstr)
+        #replenish in any event
+        new_player = self.copy()
+        if (new_state.num_in_deck > 0):
+            new_state.num_in_deck -= 1
+            new_player.hand = new_player.hand.replace_card(new_state.round, position, self, game.rules)
+        else:
+            del new_player.hand.hand[position]
+        new_state.previous_state = game
+        new_state.players[game.player_up] = new_player
+        new_state.advance_turn()
+        if verbose: print(str(new_player))
+        return new_state
+
+    def perform_wild_play(self, position, card, color_choice, game, verbose=False):
+        """
+        Perform a play action for a game which has rainbow cards set to wild play mode.
+        """
+        #TODO user input
+        new_state = game.copy()
+        import pdb; pdb.set_trace()
+        new_state.turns_taken.append(PlayAction(card, self.hand[position]))
+        #add to the chosen color's play; consider the rainbow card discarded
+        new_state.play = new_state.play.add(Card(color_choice, card.number))
+        new_state.discard = new_state.discard.add(card)
+        new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
+        if card.number == MAX_CARD_VALUE:
+            new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
+            if all([c.number == MAX_CARD_VALUE for c in new_state.play.values()]):
+                new_state.over = True
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
@@ -1212,3 +1251,15 @@ class HanabiIndexException(Exception):
     def __init__(self, index, *args):
         super().__init__(*args)
         self.index = index
+
+class HanabiUserInputRequiredException(Exception):
+    """
+    Used when additional input is required from the user to complete a
+    command.  For example, when rainbow cards are set to wild play mode
+    and the choice of which firework to apply a rainbow card to must
+    be resolved.
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        

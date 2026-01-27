@@ -182,14 +182,29 @@ def handle_play(choice, game, verbose=False):
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
-    try:
-        new_state = player.perform_play(position - 1, card, game, verbose=verbose)
-    except HanabiRulesException:
-        return game, e.args[0]
-    except HanabiSimException as e:
-        return game, e.args[0]
-    except HanabiIndexException as e:
-        return game, f'Card {e.index + 1}: {e.args[0]}'
+    try: new_state = player.perform_play(position - 1, card, game, verbose=verbose)
+    except (HanabiSimException, HanabiRulesException) as e: return game, e.args[0]
+    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
+    except HanabiUserInputRequiredException as e: raise e
+        #TODO user input
+    #    valid_colors, table = e.args
+    #    print(table)
+    return new_state, 'Success; advancing turn'
+
+def handle_wild_play(colors, choice, card, position, game, verbose=False):
+    try: choice = util.read_color_or_number(choice) #valid colors are at least 1 and at most 5
+    except HanabiSimException as e: return game, e.args[0]
+    if isinstance(choice, int):
+        try: choice = colors[choice - 1]
+        except IndexError as e:
+            return game, f'Integer must be between 1 and {len(colors)}; yours: {choice}.'
+    elif isinstance(choice, Color):
+        if not choice in colors:
+            return game, f'Your color, {choice}, was not in the table of possible colors.'
+
+    player = game.get_player(game.player_up)
+    try: new_state = player.perform_wild_play(position, card, choice, game, verbose=verbose)
+    except Exception as e: return game, 'NOT IMPLEMENTED'
     return new_state, 'Success; advancing turn'
 
 #The logic for the "hint" command
@@ -357,7 +372,22 @@ if __name__ == '__main__':
             case ['show', *options] | ['s', *options]:
                 print(handle_show(options, game))
             case ['play', *options] | ['p', *options]:
-                game, text = handle_play(options, game, verbose=verbose)
+                try: game, text = handle_play(options, game, verbose=verbose)
+                except HanabiUserInputRequiredException as e:
+                    colors, card, position, table = e.args
+                    print(table)
+                    #TODO make input gathering a function
+                    prompt = 'Select from the table above which color '\
+                             'firework to apply this card to:'
+                    try: choice = setup_choices.pop(0).strip() if setup_choices else \
+                                  input(style_text(next(color_picker), prompt))
+                    except (KeyboardInterrupt, EOFError):
+                        print('\nProgram terminated by user.')
+                        exit(0)
+                    if outfile: outfile.write(choice + '\n')
+                    game, text = handle_wild_play(
+                        colors, choice, card, position, game, verbose=verbose
+                    )
                 print(text)
             case ['hint', *options] | ['h', *options]:
                 game, text = handle_hint(options, game, verbose=verbose)
