@@ -126,7 +126,7 @@ class HanabiRuleset:
         f'(when set to "wild").  A "wild" rainbow card can add to any\n'\
         f'color\'s firework for which its number is valid when played,\n'\
         f'determined by the player playing the card.  A "suit" rainbow\n'\
-        f'card plays into a rainbow suit.'
+        f'card plays into the rainbow suit.'
     BOMBS_GIVE_HINTS_DESC = \
         'Determines whether wrongly played cards (triggering a misfire)\n'\
         'give a hint.  If True, a misfired card will restore a hint if\n'\
@@ -352,7 +352,7 @@ class UnknownCard:
             if not (color in self.colors or Color.MULTICOLOR in self.colors):
                 raise HanabiSimException(
                     f'Inconsistent hints: color {style_text(color, color.name)}'\
-                    f' would disqualify all possible colors.\nThe card:\n'\
+                    f' is not possible for a hinted card.\nThe card:\n'\
                     f'{str(self)}'
                 )
             if self.colors <= {color, Color.MULTICOLOR}: return self #nothing to do
@@ -366,7 +366,7 @@ class UnknownCard:
         if (color not in self.colors):
             raise HanabiSimException(
                 f'Inconsistent hints: color {style_text(color, color.name)}'\
-                f' was previously ruled out for a hinted card.\nThe card:\n'\
+                f' is not possible for a hinted card.\nThe card:\n'\
                 f'{str(self)}'
             )
         if self.colors == {color}: return self #nothing to do
@@ -403,7 +403,7 @@ class UnknownCard:
         if len(new_state.colors) == 0:
             raise HanabiSimException(
                 f'Inconsistent hints; color {style_text(color, color.name)}'\
-                f' was the only possible color for a non-hinted card.\n'\
+                f' would disqualify all possible colors for a non-hinted card.\n'\
                 f'The card:\n{str(self)}'
             ) 
         new_state.previous_states.append(self)
@@ -417,7 +417,7 @@ class UnknownCard:
         """
         if (number not in self.numbers):
             raise HanabiSimException(
-                f'Inconsistent hints; number {number} was previously ruled out '\
+                f'Inconsistent hints; number {number} is not possible '\
                 f'for a hinted card.\nThe card:\n{str(self)}'
             )
         if self.numbers == {number}: return self #nothing to do
@@ -437,8 +437,8 @@ class UnknownCard:
         new_state.numbers.discard(number)
         if len(new_state.numbers) == 0:
             raise HanabiSimException(
-                f'Inconsistent hints; number {number} was the only possible '\
-                f'number for a non-hinted card.\nThe card:\n{str(self)}'
+                f'Inconsistent hints; number {number} would disqualify all '\
+                f'possible numbers for a non-hinted card.\nThe card:\n{str(self)}'
             )
         new_state.previous_states.append(self)
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
@@ -551,6 +551,11 @@ class RealizedCard:
         return self.identity == other.identity and \
                self.unrealized_state == other.unrealized_state and \
                self.was_rainbow == other.was_rainbow
+
+    def __str__(self):
+        if self.was_rainbow:
+            return str(Card(Color.MULTICOLOR, self.identity.number)) + '->' + str(self.identity)
+        return str(self.identity)
 
 
 class Hand:

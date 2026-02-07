@@ -147,7 +147,6 @@ def get_players(setup_choices, outfile, color_picker):
                     'and the new card would go in position 1; and\n'\
                     'an in-place replacer would place the new card in position 3,\n'\
                     'and he would move no other cards.'
-
                 )
                 continue
             try:

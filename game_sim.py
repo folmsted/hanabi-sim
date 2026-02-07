@@ -185,25 +185,30 @@ def handle_play(choice, game, verbose=False):
     try: new_state = player.perform_play(position - 1, card, game, verbose=verbose)
     except (HanabiSimException, HanabiRulesException) as e: return game, e.args[0]
     except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
+    #We must kick this one upstairs; we cannot (cleanly) poll the user here
     except HanabiUserInputRequiredException as e: raise e
-        #TODO user input
-    #    valid_colors, table = e.args
-    #    print(table)
     return new_state, 'Success; advancing turn'
 
+#The logic for the "play" command after the user plays a rainbow card in wild-play
+#mode and has supplied the choice of (valid) color to which the card will apply
 def handle_wild_play(colors, choice, card, position, game, verbose=False):
-    try: choice = util.read_color_or_number(choice) #valid colors are at least 1 and at most 5
+    #valid colors are at least 1 and at most 5, by construction, since there are
+    #only ever 5, not 6 suits in wild-play mode because rainbow is not a suit.
+    #Therefore we can reuse this function.
+    try: choice = util.read_color_or_number(choice)
     except HanabiSimException as e: return game, e.args[0]
     if isinstance(choice, int):
         try: choice = colors[choice - 1]
         except IndexError as e:
             return game, f'Integer must be between 1 and {len(colors)}; yours: {choice}.'
     elif isinstance(choice, Color):
-        if not choice in colors:
+        if choice not in colors:
             return game, f'Your color, {choice}, was not in the table of possible colors.'
+    else: return game, f'Unrecognized input {choice}.'
 
     player = game.get_player(game.player_up)
     try: new_state = player.perform_wild_play(position, card, choice, game, verbose=verbose)
+    #TODO check and handle possible exceptions with proper error strings
     except Exception as e: return game, 'NOT IMPLEMENTED'
     return new_state, 'Success; advancing turn'
 
@@ -239,12 +244,12 @@ def handle_hint(choice, game, verbose=False):
         return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
     #do the hint
     try:
-        new_game_state = player.perform_hint(target_player, positions, hint, game, verbose=verbose)
+        new_state = player.perform_hint(target_player, positions, hint, game, verbose=verbose)
     except (HanabiRulesException, HanabiSimException) as e:
         return game, e.args[0]
     except HanabiIndexException as e:
         return game, f'Position {e.index + 1}: {e.args[0]}'
-    return new_game_state, 'Success; advancing turn'
+    return new_state, 'Success; advancing turn'
 
 #The logic for the "discard" command
 def handle_discard(choice, game, verbose=False):
@@ -261,7 +266,7 @@ def handle_discard(choice, game, verbose=False):
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
     try:
-        new_game_state = player.perform_discard(position - 1, card, game, verbose=verbose)
+        new_state = player.perform_discard(position - 1, card, game, verbose=verbose)
     except HanabiRulesException as e:
         if e.args[0]: return (game, e.args[0])
         return (game, f'Cannot discard position {position}; no such card')
@@ -269,7 +274,7 @@ def handle_discard(choice, game, verbose=False):
         return game, e.args[0]
     except HanabiIndexException as e:
         return game, f'Card {e.index + 1}: {e.args[0]}'
-    return new_game_state, 'Success; advancing turn'
+    return new_state, 'Success; advancing turn'
 
 #The logic for the "guess" command
 def handle_guess(choice, game, verbose=False):
