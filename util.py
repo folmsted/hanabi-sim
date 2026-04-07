@@ -384,7 +384,7 @@ help_play = \
     'play 2 r1 (player plays card in position 2, which was a red 1)'
 
 help_hint = \
-    'The "hint" command, short form "h".  Used to indicate'\
+    'The "hint" command, short form "h".  Used to indicate\n'\
     'that the turn player should give a hint to another player.\n'\
     'Usage:\n'\
     'hint <player> <positions> <hint>\n'\
