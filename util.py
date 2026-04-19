@@ -4,23 +4,6 @@ import readline
 import argparse
 from enum import Enum
 
-STR_TO_COLOR_MAP = {
-    'b'          : Color.BLUE,
-    'blue'       : Color.BLUE,
-    'g'          : Color.GREEN,
-    'green'      : Color.GREEN,
-    'r'          : Color.RED,
-    'red'        : Color.RED,
-    'w'          : Color.WHITE,
-    'white'      : Color.WHITE,
-    'y'          : Color.YELLOW,
-    'yellow'     : Color.YELLOW,
-    'm'          : Color.MULTICOLOR,
-    'multi'      : Color.MULTICOLOR,
-    'multicolor' : Color.MULTICOLOR,
-    'rainbow'    : Color.MULTICOLOR
-}
-
 PROTOCOL_MAP = {
     'i'           : 'in_place',
     'in'          : 'in_place',
@@ -41,6 +24,19 @@ PROTOCOL_MAP = {
 COMMENT_START = '//'
 PLAYERNAME_MAX_LENGTH = 16
 
+
+def get_color_from_str(s):
+    match s:
+        case s if 'blue'      .startswith(s.lower()): return Color.BLUE
+        case s if 'green'     .startswith(s.lower()): return Color.GREEN
+        case s if 'red'       .startswith(s.lower()): return Color.RED
+        case s if 'white'     .startswith(s.lower()): return Color.WHITE
+        case s if 'yellow'    .startswith(s.lower()): return Color.YELLOW
+        case s if 'multicolor'.startswith(s.lower()): return Color.MULTICOLOR
+        #'r' maps to red not rainbow
+        case s if 'rainbow'   .startswith(s.lower()): return Color.MULTICOLOR
+        case _ : raise KeyError(f'Input {s} does not correspond to any color.')
+        
 def trim_comment(string, comment_delimiter=COMMENT_START):
     """
     Search for any part of a string which comes after the given comment_delimiter
@@ -186,11 +182,11 @@ def read_card(s):
     c = None
     try:
         n = int(s[0])
-        c = STR_TO_COLOR_MAP[s[1:].lower()]
+        c = get_color_from_str(s[1:])
     except:
         try:
             n = int(s[-1])
-            c = STR_TO_COLOR_MAP[s[:-1].lower()]
+            c = get_color_from_str(s[:-1])
         except:
             raise ValueError(f'You must specify a number and color; your input: {s}')
     if not (1 <= n <= 5):
@@ -209,7 +205,7 @@ def read_color_or_number(user_input):
         if not 1 <= ret <= 5: raise ValueError
     except ValueError:
         try:
-            ret = STR_TO_COLOR_MAP[user_input]
+            ret = get_color_from_str(user_input)
         except KeyError:
             raise HanabiSimException(f'Invalid value; expected number or color; yours: {user_input}')
     return ret
@@ -232,69 +228,65 @@ def resolve_player(choice, game):
         raise KeyError(e.args[0])
     return player
 
-STATS_SORTING_MAP1 = {
-    None     : 0,
-    'r'      : 0,
-    'round'  : 0,
-    'p'      : 1,
-    'player' : 1,
-    'c'      : 2,
-    'card'   : 2
-}
+ActionMetadata = namedtuple('ActionMetadata', ['rnd', 'player', 'action'])
 
-STATS_SORTING_MAP2 = {
-    None       : 0,
-    'r'        : 0,
-    'round'    : 0,
-    'g'        : 1,
-    'giver'    : 1,
-    't'        : 2,
-    'target'   : 2,
-    'n'        : 3,
-    'number'   : 3,
-    'h'        : 4,
-    'hint'     : 4
-}
-
-#TODO There is very likely a better way to implement sorting.  Do so.
-def sort_stats_rows1(rows, sort):
-    if not sort:
-        return rows
+def sort_stats_playdiscardmisfire(actions, sort):
+    #package the metadata up in a nice object for sorting
+    actions_metadata = [ActionMetadata(a[0], a[1], a[2]) for a in actions]
+    if not sort: return actions_metadata
     if len(sort) > 1: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
     sort = sort[0]
-    try: rows.sort(key = lambda l: l[STATS_SORTING_MAP1[sort]])
+    #define a function for sorting the actions according to requested sort field
+    key = lambda metadata: metadata.rnd         if  'round'.startswith(sort) else \
+                           metadata.player      if 'player'.startswith(sort) else \
+                           metadata.action.card if   'card'.startswith(sort) else \
+                           0 #default to no sorting if nothing matches
+    try: actions_metadata.sort(key = key)
     except: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    return #sort modifies in-place; nothing to return
+    return actions_metadata
 
-def sort_stats_rows2(rows, sort):
-    if not sort:
-        return rows
+def sort_stats_hints(actions, sort):
+    #package the metadata up in a nice object for sorting
+    actions_metadata = [ActionMetadata(a[0], a[1], a[2]) for a in actions]
+    if not sort: return actions_metadata
     if len(sort) > 1: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
     sort = sort[0]
-    #if they specify the number of positions hinted, sort by number of positions hinted
-    #the length of the string at the position can be used to sort by number of positions.
-    #if they specify to sort by the hint given, do numbers first, then colors
-    try: rows.sort(
-        key = lambda l: len(l[STATS_SORTING_MAP2[sort]]) if sort in {'n', 'number'} else
-                            l[STATS_SORTING_MAP2[sort]].value + len(Color)
-                            if (sort in {'h', 'hint'} and
-                            isinstance(l[STATS_SORTING_MAP2[sort]], Color))
-                            else l[STATS_SORTING_MAP2[sort]]
-    )
-    except: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    return #sort modifies in-place; nothing to return
+    #If sorting by hint is requested, we sort by number hints first then color hints
+    #second.  Since hints are either an int (1-5) or a Color, we cannot compare them
+    #directly, so we take numbers at face value (1-5) and Colors as their enum value
+    #(1-6) PLUS the total number of Colors (6) so that Colors hints get a higher
+    #value than number hints and so are sorted last in the list, as desired.
+    key = lambda metadata:                                                              \
+        metadata.rnd                          if 'round'.startswith(sort.lower())  else \
+        metadata.player                       if 'giver'.startswith(sort.lower())  else \
+        metadata.action.targetplayer_index    if 'target'.startswith(sort.lower()) else \
+        len(metadata.action.positions)        if 'number'.startswith(sort.lower()) else \
+        metadata.action.hint if isinstance(metadata.action.hint, int) else \
+        metadata.action.hint.value + len(Color)                            \
+                                              if  'hint'.startswith(sort.lower())  else \
+        0 #default to no sorting if nothing matches
+        
 
-def sort_stats_rows3(rows, sort):
-    if not sort:
-        return rows
+    try: actions_metadata.sort(key=key)
+    except: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
+    return actions_metadata
+
+#TODO add options for sorting a player's action... or resolve not to
+def sort_stats_players(actions, sort):
+    #give a dummy string for player; we don't care about it
+    actions_metadata = [ActionMetadata(a[0], '', a[1]) for a in actions]
+    if not sort: return actions_metadata
     if len(sort) > 1: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
     sort = sort[0]
-    if sort in {'r', 'round'}: return rows
-    if sort not in {'a', 'action'}:
-        raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    try: rows.sort(key = lambda l: l[1])
-    except: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    return #sort modifies in-place; nothing to return
+    #Just separate the different action types for now
+    key = lambda metadata: \
+        isinstance(metadata.action, HintAction)    * 1 + \
+        isinstance(metadata.action, PlayAction)    * 2 + \
+        isinstance(metadata.action, DiscardAction) * 3 + \
+        isinstance(metadata.action, MisfireAction) * 4
+    if 'action'.startswith(sort.lower()): actions_metadata.sort(key = key)
+    return actions_metadata
+    
 
 #help strings.  Moved here because they are unruly and ugly
 help_general = \

@@ -85,82 +85,81 @@ def handle_show(choice, game):
                 case ['play', *sort] | ['p', *sort]:
                     actions = game.get_actions_of_type(PlayAction)
                     header = ['index', 'round', 'player', 'card']
-                    rows = [
-                        [i + 1,
-                         game.players[j].name,
-                         action.card
-                        ] for i, j, action in actions
-                    ]
-                    try: util.sort_stats_rows1(rows, sort)
+                    try: action_metadata = util.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
-                    for i, row in enumerate(rows):
-                        row.insert(0, i + 1)
+                    rows = [
+                        [index + 1,
+                         md.rnd + 1,
+                         game.players[md.player].name,
+                         md.action.card
+                        ] for index, md in enumerate(action_metadata)
+                    ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case ['discard', *sort] | ['d', *sort]:
                     actions = game.get_actions_of_type(DiscardAction)
                     header = ['index', 'round', 'player', 'card']
-                    rows = [
-                        [i + 1,
-                         game.players[j].name,
-                         action.card
-                        ] for i, j, action in actions
-                    ]
-                    try: util.sort_stats_rows1(rows, sort)
+                    try: action_metadata = util.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
-                    for i, row in enumerate(rows):
-                        row.insert(0, i + 1)
+                    rows = [
+                        [index + 1,
+                         md.rnd + 1,
+                         game.players[md.player].name,
+                         md.action.card
+                        ] for index, md in enumerate(action_metadata)
+                    ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case ['misfire', *sort] | ['m', *sort]:
                     actions = game.get_actions_of_type(MisfireAction)
                     header = ['index', 'round', 'player', 'card']
-                    rows = [
-                        [i + 1,
-                         game.players[j].name,
-                         action.card
-                        ] for i, j, action in actions
-                    ]
-                    try: util.sort_stats_rows1(rows, sort)
+                    try: action_metadata = util.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
-                    for i, row in enumerate(rows):
-                        row.insert(0, i + 1)
+                    rows = [
+                        [index + 1,
+                         md.rnd + 1,
+                         game.players[md.player].name,
+                         md.action.card
+                        ] for index, md in enumerate(action_metadata)
+                    ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case ['hint', *sort] | ['h', *sort]:
                     actions = game.get_actions_of_type(HintAction)
                     header = ['index', 'round', 'giver', 'receiver', 'cards', 'hint']
-                    rows = [
-                        [i + 1,
-                         game.players[j].name,
-                         game.players[action.targetplayer_index].name,
-                         ', '.join([str(p + 1) for p in action.positions]),
-                         action.hint
-                        ] for i, j, action in actions
-                    ]
-                    try: util.sort_stats_rows2(rows, sort)
+                    try: action_metadata = util.sort_stats_hints(actions, sort)
                     except HanabiSimException as e: return e.args[0]
-                    for i, row in enumerate(rows):
-                        row.insert(0, i + 1)
+                    rows = [
+                        [index + 1,
+                         md.rnd + 1,
+                         game.players[md.player].name,
+                         game.players[md.action.targetplayer_index].name,
+                         ', '.join([str(p + 1) for p in md.action.positions]),
+                         md.action.hint
+                        ] for index, md in enumerate(action_metadata)
+                    ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case [player_request, *sort] | [player_request, *sort]:
                     try: player = util.resolve_player(player_request, game)
                     except (KeyError, IndexError) as e: return e.args[0]
                     actions = game.get_player_actions(game.players.index(player))
+                    #don't care about sorting one player's actions by player, omit it
+                    actions = [(rnd, act) for rnd, act in enumerate(actions)]
                     header = ['index', 'round', f'{player.name} action']
+                    #TODO make this use metadata and let sorting preserve round data
+                    try: actions_metadata = util.sort_stats_players(actions, sort)
+                    except Exception as e: raise e #TODO handle error as above
                     rows = [
                         [i + 1,
-                        f'Played {a.card}'    if isinstance(a, PlayAction)    else
-                        f'Discarded {a.card}' if isinstance(a, DiscardAction) else
-                        f'Misfired {a.card}'  if isinstance(a, MisfireAction) else
-                        f'Hinted {game.players[a.targetplayer_index].name} about '\
-                        f'{a.hint} at positions {", ".join([str(p + 1) for p in a.positions])}.'
-                        if isinstance(a, HintAction)
+                        md.rnd + 1,
+                        f'Played {md.action.card}'    if isinstance(md.action, PlayAction)    else
+                        f'Discarded {md.action.card}' if isinstance(md.action, DiscardAction) else
+                        f'Misfired {md.action.card}'  if isinstance(md.action, MisfireAction) else
+                        f'Hinted {game.players[md.action.targetplayer_index].name} about '\
+                        f'{md.action.hint} at positions ' \
+                        f'{", ".join([str(p + 1) for p in md.action.positions])}.'
+                        if isinstance(md.action, HintAction)
                         else '?!? Should never happen!'
-                        ] for i, a in enumerate(actions)
+                        ] for i, md in enumerate(actions_metadata)
                     ]
-                    #TODO this sorting option is garbage.  Make it better somehow
-                    try: util.sort_stats_rows3(rows, sort)
-                    except HanabiSimException as e: return e.args[0]
-                    for i, row in enumerate(rows):
-                        row.insert(0, i + 1)
+                    #TODO this sorting option is still garbage.  Make it better somehow
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case _:
                     text = 'You must specify what information to show; try "help show info".'

@@ -829,17 +829,16 @@ class DiscardAction:
 
 class PlayAction:
 
-    def __init__(self, card, card_state_on_discard):
+    def __init__(self, card, card_state_on_play):
         self.card = card
-        self.card_state_on_discard = card_state_on_discard
+        self.card_state_on_play = card_state_on_play
 
 
 class MisfireAction:
 
-    def __init__(self, card, card_state_on_discard):
+    def __init__(self, card, card_state_on_misfire):
         self.card = card
-        self.card_state_on_discard = card_state_on_discard
-
+        self.card_state_on_misfire = card_state_on_misfire
 
 class GameState:
     """
@@ -917,11 +916,11 @@ class GameState:
         if typ not in {PlayAction, DiscardAction, MisfireAction, HintAction}:
             raise HanabiSimException('Unreasonable action type queried.')
         return [
-            (i // self.num_players, #round number
-             i %  self.num_players, #player turn
-             action
-            )
-            for i, action in enumerate(self.turns_taken) if isinstance(action, typ)
+            (
+                i // self.num_players, #round number
+                i %  self.num_players, #player turn
+                action
+            ) for i, action in enumerate(self.turns_taken) if isinstance(action, typ)
         ]
 
     def copy(self):
