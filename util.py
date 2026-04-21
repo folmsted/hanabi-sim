@@ -1,8 +1,10 @@
 from game_objects import *
+from pie_chart import generate_pie_chart, DEFAULT_CHART_HEIGHT
 import random
 import readline
 import argparse
 from enum import Enum
+
 
 PROTOCOL_MAP = {
     'i'           : 'in_place',

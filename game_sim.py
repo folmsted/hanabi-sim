@@ -163,6 +163,40 @@ def handle_show(choice, game):
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case _:
                     text = 'You must specify what information to show; try "help show info".'
+        case ['graph', *args] | ['g', *args]:
+            match args:
+                case ['play', *sort] | ['p', *sort]:
+                    actions = game.get_actions_of_type(PlayAction)
+                    action_takers = [game.players[action[1]].name for action in actions]
+                    #Generate map from names to times taking PlayAction
+                    data = {
+                        name : len([*filter(lambda x: x == name, action_takers)])
+                        for name in [p.name for p in game.players]
+                    }
+                    title = 'Play Actions by Player'
+                    text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
+                case ['discard', *sort] | ['d', *sort]:
+                    actions = game.get_actions_of_type(DiscardAction)
+                    action_takers = [game.players[action[1]].name for action in actions]
+                    #Generate map from names to times taking DiscardAction
+                    data = {
+                        name : len([*filter(lambda x: x == name, action_takers)])
+                        for name in [p.name for p in game.players]
+                    }
+                    title = 'Discard Actions by Player'
+                    text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
+                case ['misfire', *sort] | ['m', *sort]:
+                    actions = game.get_actions_of_type(MisfireAction)
+                    action_takers = [game.players[action[1]].name for action in actions]
+                    #Generate map from names to times taking DiscardAction
+                    data = {
+                        name : len([*filter(lambda x: x == name, action_takers)])
+                        for name in [p.name for p in game.players]
+                    }
+                    title = 'Misfire Actions by Player'
+                    text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
+                    actions = game.get_actions_of_type(MisfireAction)
+            #text = 'Not yet implemented'
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text

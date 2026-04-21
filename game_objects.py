@@ -76,7 +76,7 @@ def style_text(color, text, deterministic = False):
 
 def guess_text(color, text):
     """
-    color: a Color object or a valid colorama color
+    color: a Color object
     text: arbitrary text to be colored
     """
     return f'{SUSPICION_STYLE[color]}{text}{Style.RESET_ALL}'
@@ -272,6 +272,7 @@ class HanabiRuleset:
             ['game_end', self.game_end.short_form,
                  self.game_end.value, str(self.GAME_END_OPTIONS).replace("'", "")]
         ]
+        #omit how rainbow cards are treated if they do not exist
         if not self['rainbow_enabled']:
             del rows[2]
             del rows[1]
