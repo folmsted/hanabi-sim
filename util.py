@@ -58,8 +58,7 @@ def get_rules(setup_choices, outfile, color_picker):
                      input(style_text(next(color_picker),
                            f'Print rules, change a rule, go to game, or ask for help with \'?\':'
                      ))
-        if outfile:
-            outfile.write(rule + '\n')
+        if outfile: outfile.write(rule + '\n')
         rule = trim_comment(rule, COMMENT_START).strip().split()
         match rule:
             case ['?']:
@@ -77,8 +76,7 @@ def get_rules(setup_choices, outfile, color_picker):
             case ['print', 'rules'] | ['p']:
                 print(rules)
             case ['explain', arg]:
-                try:
-                    print(rules.get_description(arg))
+                try: print(rules.get_description(arg))
                 except KeyError as e: print(e.args)
                 except Exception as e: raise e
             case [rulestr, *arg]:
@@ -99,14 +97,18 @@ def get_players(setup_choices, outfile, color_picker):
     protocols = []
     done = False
     while (not done):
+        #first, query for a player name
         playername = setup_choices.pop(0).strip() if setup_choices else \
                      input(style_text(next(color_picker),
                            f'Enter player {len(players) + 1} name (16 characters max, '\
                            f'no spaces), or nothing to proceed to game:'
                      ))
-        if outfile:
-            outfile.write(playername + '\n')
+        if outfile: outfile.write(playername + '\n')
         playername = trim_comment(playername, COMMENT_START).strip()
+        #check if duplicate player name
+        if playername in players:
+            print('There is already a player with this name.')
+            continue
         #check if name too long
         if len(playername) > PLAYERNAME_MAX_LENGTH:
             print(f'Player names must be no more than 16 characters; yours {len(playername)}.')
@@ -121,6 +123,7 @@ def get_players(setup_choices, outfile, color_picker):
         if (not playername):
             return players, protocols
 
+        #second, query for a replenishment protocol
         invalid = True
         while (invalid):
             protocol = setup_choices.pop(0).strip() if setup_choices else \
@@ -158,16 +161,17 @@ def get_players(setup_choices, outfile, color_picker):
             done = True
     return players, protocols
 
-#A generator to randomly shuffle some reasonably legible colors and return them in that order forever, repeating when exhausted.
+#A generator to randomly shuffle some reasonably legible colors and return
+#them in that order forever, repeating when exhausted.
 def generate_color():
     #Commented colors are harder to read; move pound signs to include additional colors 
     colors =  ([
-                  Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
-                  Fore.MAGENTA, Fore.BLUE, Fore.CYAN, #Fore.WHITE,
-                  Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
-                  Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
-                  Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
-              ])
+        Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
+        Fore.MAGENTA, Fore.BLUE, Fore.CYAN, #Fore.WHITE,
+        Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
+        Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
+        Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
+    ])
     random.shuffle(colors)
 
     i = 0
@@ -288,6 +292,13 @@ def sort_stats_players(actions, sort):
         isinstance(metadata.action, MisfireAction) * 4
     if 'action'.startswith(sort.lower()): actions_metadata.sort(key = key)
     return actions_metadata
+
+#Given a list of potentially repeating elemets, return a map for unique elements
+#to the number of times the element appeared in the list
+def unique_counts(l):
+    return {
+        label : len([*filter(lambda x: x == label, l)]) for label in set(l)
+    }
     
 
 #help strings.  Moved here because they are unruly and ugly

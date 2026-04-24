@@ -165,38 +165,53 @@ def handle_show(choice, game):
                     text = 'You must specify what information to show; try "help show info".'
         case ['graph', *args] | ['g', *args]:
             match args:
-                case ['play', *sort] | ['p', *sort]:
-                    actions = game.get_actions_of_type(PlayAction)
+                #TODO handle options or resolve not to use options
+                case ['play', *options]    | ['p', *options] | \
+                     ['discard', *options] | ['d', *options] | \
+                     ['misfire', *options] | ['m', *options] | \
+                     ['hint', *options] | ['h', *options] if not options:
+                    st, tp = ('Play', PlayAction) if args[0] in {'play', 'p'} else          \
+                             ('Discard', DiscardAction) if args[0] in {'discard', 'd'} else \
+                             ('Misfire', MisfireAction) if args[0] in {'misfire', 'm'} else \
+                             ('Hint', HintAction) if args[0] in {'hint', 'h'} else '?????'
+                     
+                    actions = game.get_actions_of_type(tp)
                     action_takers = [game.players[action[1]].name for action in actions]
                     #Generate map from names to times taking PlayAction
                     data = {
                         name : len([*filter(lambda x: x == name, action_takers)])
                         for name in [p.name for p in game.players]
                     }
-                    title = 'Play Actions by Player'
+                    title = f'{st} Actions by Player'
                     text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
-                case ['discard', *sort] | ['d', *sort]:
-                    actions = game.get_actions_of_type(DiscardAction)
-                    action_takers = [game.players[action[1]].name for action in actions]
-                    #Generate map from names to times taking DiscardAction
-                    data = {
-                        name : len([*filter(lambda x: x == name, action_takers)])
-                        for name in [p.name for p in game.players]
-                    }
-                    title = 'Discard Actions by Player'
+                case ['hint', 'to',   player] | ['h', 'to',   player] | \
+                     ['hint', '>',    player] | ['h', '>',    player] | \
+                     ['hint', 'from', player] | ['h', 'from', player] | \
+                     ['hint', '<',    player] | ['h', '<',    player] :
+                     
+                    actions = game.get_actions_of_type(HintAction)
+                    try: player_idx = game.players.index(game.get_player(player))
+                    except (IndexError, KeyError) as e: return  e.args[0]
+                    #filter out hints not from (to) the requested player
+                    actions = \
+                        filter(lambda x: x[1]==player_idx, actions) if args[1] in {'from', '<'} \
+                        else filter(lambda x: x[2].targetplayer_index == player_idx, actions)
+                    #TODO add options to make charts of other facts than just hint giver/receiver
+                    #get just the name of the hint giver (receiver)
+                    actions = \
+                        [game.get_player(t[1]).name for t in actions] if args[1] in {'to', '>'} \
+                        else [game.get_player(t[2].targetplayer_index).name for t in actions]
+                    #don't put the target player in the chart; he can't hint himself
+                    #but do put other players in even if they haven't hinted the target
+                    #(or been hinted by the target)
+                    eligible_players = {p.name for p in game.players} - \
+                                       {game.get_player(player_idx).name}
+                    data = {p : 0 for p in eligible_players} | util.unique_counts(actions)
+                    st = 'to' if args[1] in {'to', '>'} else 'from'
+                    title = f'Hints {st} {game.get_player(player_idx).name}'
                     text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
-                case ['misfire', *sort] | ['m', *sort]:
-                    actions = game.get_actions_of_type(MisfireAction)
-                    action_takers = [game.players[action[1]].name for action in actions]
-                    #Generate map from names to times taking DiscardAction
-                    data = {
-                        name : len([*filter(lambda x: x == name, action_takers)])
-                        for name in [p.name for p in game.players]
-                    }
-                    title = 'Misfire Actions by Player'
-                    text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
-                    actions = game.get_actions_of_type(MisfireAction)
-            #text = 'Not yet implemented'
+                case [*args]:
+                    text = 'Unrecognized arguments {"".join(args)}; try "help show graph"'
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text

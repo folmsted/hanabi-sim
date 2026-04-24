@@ -950,6 +950,7 @@ class GameState:
 
     #get a player specified by a number in turn order or an unambiguous string
     #of characters which begins the player's name
+    #TODO make this function return both index and player or add a method to get the index
     def get_player(self, specifier):
         if isinstance(specifier, int):
             try: return self.players[specifier]
