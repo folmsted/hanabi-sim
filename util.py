@@ -349,7 +349,9 @@ help_show = \
     '---> <player> can be a number indicating turn order or a\n'\
     '     string which unambiguously identifies the player.\n'\
     'show info|i <option> [sort] (to show statistics about the game so far)\n'\
-    '---> For detailed information on show info, use "help show info".'
+    '---> For detailed information on show info, use "help show info".\n'\
+    'show graph|g <options> (to graph information about the game so far)\n'\
+    '---> For detailed information on show graph, use "help show graph".'
 
 help_show_info = \
     'The "show" command\'s "info" option.  Used to show statistics about the game so far.\n'\
@@ -373,6 +375,16 @@ help_show_info = \
     '     sort options for players:\n'\
     '         round|r for round performed (default);\n'\
     '         action|a for action taken.'
+
+help_show_graph = \
+    'The "show command\'s "graph" option.  used to graph statistics about the game so far.\n'\
+    'Usage:\n'\
+    'show graph|g <options>\n'\
+    '---> <options> can be one of {play|p, discard|d, misfire|m, hint|h} to print\n'\
+    '     a graph of percentages of plays/discards/misfires/hints performed by each player.\n'\
+    '---> If using the hint option, one can use additional arguments:\n'\
+    '         to|> <player> to graph percentages of hints to <player>, by giver;\n'\
+    '         from|< <player> to graph percentages of hints from <player>, by destination.'
 
 help_play = \
     'The "play" command, short form "p".  '\

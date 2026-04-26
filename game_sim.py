@@ -23,6 +23,8 @@ def handle_help(choice):
            match args:
                case ['info'] | ['i']:
                    text = util.help_show_info
+               case ['graph'] | ['g']:
+                   text = util.help_show_graph
                case []:
                    text = util.help_show
                case _:
