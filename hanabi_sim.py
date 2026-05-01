@@ -1,5 +1,3 @@
-from enum import Enum
-import random
 import readline
 import argparse
 import input_handling as ih

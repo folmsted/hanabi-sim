@@ -208,7 +208,7 @@ def handle_show(choice, game):
                     title = f'Hints {st} {game.get_player(player_idx).name}'
                     text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
                 case [*args]:
-                    text = 'Unrecognized arguments {"".join(args)}; try "help show graph"'
+                    text = f'Unrecognized arguments {"".join(args)}; try "help show graph"'
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text
