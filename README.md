@@ -5,7 +5,7 @@ This is not an _implementation_ of Hanabi; it does not allow you to play.  Rathe
 
 Usage:
 
-`python3 game_sim.py [options]`
+`python3 hanabi_sim.py [options]`
 
 You can specify `-o <outfile>` to record the commands to a file.  Similarly, use `-i <infile>` to load the commands from a file.  There is a `-v` option which causes hanabi-sim to automatically print the hand of the relevant player after an action is taken.
 
@@ -21,7 +21,7 @@ s h janos (show the current state of the hand of the player whose name starts wi
 
 Note that by convention, players are numbered 1, ..., n (not 0, ... n - 1) and that cards in a player's hand are numbered 1, ..., n from left to right, _from that player's perspective_.  So your card at position 1 is your leftmost card.  If you hold 5 cards, your position 5 card is your rightmost.
 
-There is an in-program help feature, accessible with the "help" command.  The intent is that this will be sufficient for a user who understands the rules of hanabi to understand and use hanabi-sim.  To the extent that the provided help is ambiguous or incomplete (but not to the extent that it is lengthy) it is wrong and needs to be corrected.  Suggestions to this effect will be considered.
+There is an in-program help feature, accessible with the "help" command.  The intent is that this will be sufficient for a user who understands the rules of hanabi to understand and use hanabi-sim.  To the extent that the provided help is ambiguous or incomplete (but not to the extent that it is lengthy) it is wrong and needs to be corrected.
 
 Written and tested (to the extent it is tested) on Python 3.13.5
 
