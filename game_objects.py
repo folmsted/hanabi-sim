@@ -941,6 +941,7 @@ class GameState:
         cpy.players = [p for p in self.players]
         cpy.outstanding_cards = self.outstanding_cards # OutstandingCards immutable
         cpy.num_in_deck = self.num_in_deck
+        cpy.game_end_index = self.game_end_index
         cpy.over = self.over
         cpy.previous_state = self.previous_state
         cpy.turns_taken = self.turns_taken.copy()
@@ -1000,8 +1001,10 @@ class GameState:
         if self.rules['game_end'] == 'final_round':
             if self.player_up == self.game_end_index:
                 print('The player who drew the last card has gone again; the game is over.')
+                self.over = True
             elif self.game_end_index is None and self.num_in_deck == 0:
-                self.game_end_index = game.player_up
+                print('The last card has been drawn; one round remains.')
+                self.game_end_index = self.player_up
         self.player_up += 1
         self.round += self.player_up // self.num_players
         self.player_up = self.player_up % self.num_players
