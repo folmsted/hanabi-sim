@@ -339,6 +339,7 @@ help_show = \
     'show state|s (to show some general game state)\n'\
     'show play|p (to show which cards have been played successfully)\n'\
     'show discard|d (to show which cards are out of play)\n'\
+    'show rules|r (to show the current ruleset being used)\n'\
     'show hand|h [player] (to show the hand of [player])\n'\
     '---> [player] can be a number indicating turn order or a\n'\
     '     string which unambiguously identifies the player (defaults to player up).\n'\

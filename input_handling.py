@@ -77,6 +77,8 @@ def handle_show(choice, game):
             try: player = util.resolve_player(player_request, game)
             except (KeyError, IndexError) as e: return e.args[0]
             text = str(player)
+        case ['rules'] | ['r']:
+            text = str(game.rules)
         case ['info', *args] | ['i', *args]:
             match args:
                 case ['play', *sort] | ['p', *sort]:

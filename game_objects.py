@@ -896,13 +896,13 @@ class GameState:
 
     def represent_general(self):
         players = 'Players (in order): ' + ', '.join([p.name for p in self.players]) + '\n'
-        return players + tabulate([
-                   ['Round', 'Player Up', 'Hints', 'Misfires'],
-                   [self.round, self.players[self.player_up].name, self.hints, self.misfires]
-               ],
-               headers='firstrow',
-               tablefmt='pretty'
-        )
+        fields = ['Round', 'Player Up', 'Hints', 'Misfires', 'Deck Size']
+        values = [self.round, self.players[self.player_up].name, self.hints, self.misfires, self.num_in_deck]
+        if self.rules['game_end'] == 'final_round' and self.game_end_index is not None:
+            fields.append('Final Player')
+            values.append(self.get_player(self.game_end_index).name)
+        table =  tabulate([fields, values], headers='firstrow', tablefmt='pretty')
+        return players + table
 
     def get_player_actions(self, player_index):
         """
