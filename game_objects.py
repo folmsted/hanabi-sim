@@ -726,8 +726,8 @@ class PlayedCards:
 
 class OutstandingCards:
     """
-    A collection of all cards in the game of Hanabi using rules which do not
-    include rainbows.  Updated throughout the game to exclude cards revealed
+    A collection of all cards in the game of Hanabi.
+    Updated throughout the game to exclude cards revealed
     by discards and plays.  Notably, cards which are in players' hands are
     considered to be outstanding because they are not publicly known.
     """
@@ -764,7 +764,10 @@ class OutstandingCards:
                    for j in range(len(Color) - (0 if self.rules['rainbow_enabled'] else 1))]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
-    
+
+    def contains(self, card, count = 1):
+        return self.cards.count(card) >= count
+
     def copy(self):
         cpy = OutstandingCards(self.rules)
         #cards immutable; no deep copy needed
@@ -856,6 +859,7 @@ class GameState:
     default_players = ['Player0', 'Player1', 'Player2']
     default_protocols = ['in_place', 'left_shift', 'right_shift']
     default_rules = HanabiRuleset()
+    game_end_index = None #the index of the player who draws the last card, when applicable
 
     def __init__(self, players=default_players, protocols=default_protocols, ruleset=default_rules):
         self.rules = ruleset
@@ -965,10 +969,39 @@ class GameState:
             if (len(s) == 1): return s.pop()
             else:
                 raise KeyError(f"Specifier {specifier} failed to uniquely identify a player; "\
-                               f"found [{',  '.join([p.name for p in s])}] (\"show state\" for players)")
+                               f"found [{', '.join([p.name for p in s])}] (\"show state\" for players)")
         raise KeyError(f'Specified player {specifier} not found among player list.')
+
+    #returns True if there exists a way to successfully play the 5 card for every suit
+    #and False otherwise
+    def is_satisfiable(self):
+        
+        demanded_rainbow_cards = defaultdict(lambda: 0)
+        #for every Card(color, number) not yet played, check if we have one available
+        for color, card in self.play.cards.items():
+            for val in range(card.number + 1, MAX_CARD_VALUE + 1):
+                if not self.outstanding_cards.contains(Card(color, val)):
+                    #if we lack the card and rainbows aren't wild, it's unsatisfiable
+                    if self.rules['rainbow_play'] != 'wild': return False
+                    #if rainbows are wild, we need a rainbow of the same number
+                    else: demanded_rainbow_cards[val] += 1
+
+        #check if we have enough rainbows to cover if rainbows wild; dict is empty if not wild
+        for val, count in demanded_rainbow_cards.items():
+            if not self.outstanding_cards.contains(Card(Color.MULTICOLOR, val), count):
+                return False
+        return True
+                
  
     def advance_turn(self):
+        if self.rules['game_end'] == 'until_done' and not self.is_satisfiable():
+            print('An essential card was discarded; the game is lost.')
+            self.over = True
+        if self.rules['game_end'] == 'final_round':
+            if self.player_up == self.game_end_index:
+                print('The player who drew the last card has gone again; the game is over.')
+            elif self.game_end_index is None and self.num_in_deck == 0:
+                self.game_end_index = game.player_up
         self.player_up += 1
         self.round += self.player_up // self.num_players
         self.player_up = self.player_up % self.num_players
@@ -1101,7 +1134,7 @@ class Player:
         """
         #TODO user input
         new_state = game.copy()
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         new_state.turns_taken.append(PlayAction(card, self.hand[position]))
         #add to the chosen color's play; consider the rainbow card discarded
         new_state.play = new_state.play.add(Card(color_choice, card.number))
