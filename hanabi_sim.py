@@ -41,9 +41,11 @@ if __name__ == '__main__':
         exit(0)
     game = GameState(players, protocols, ruleset=rules)
 
-    while (not game.over):
+    while (True):
         prompt = f'Ask for information with "?" or make a play '\
-                 f'(player up: {game.get_player(game.player_up).name}):' 
+                 f'(player up: {game.get_player(game.player_up).name}):'
+        if game.over:
+            prompt = 'The last play would have caused the end of the game; undo (N/y)?'
         try:
             choice = setup_choices.pop(0).strip() if setup_choices else \
                      input(style_text(next(color_picker), prompt))
@@ -54,6 +56,16 @@ if __name__ == '__main__':
             outfile.write(choice + '\n')
         choice = util.trim_comment(choice, util.COMMENT_START).split()
         match choice:
+            #if the game was ended by the last turn taken, give a chance to back out
+            case ['y'] | ['Y'] if game.over:
+                text = f'Reverting to prior state; round: {game.previous_state.round}, '\
+                f'player up: {game.previous_state.players[game.previous_state.player_up].name}'\
+                if game.previous_state else 'Cannot revert; no previous state to revert to'
+                game = game.previous_state if game.previous_state else game
+                print(text)
+            case _ if game.over:
+                break
+            #otherwise, proceed with the next round
             case []:
                 continue
             case ['help', *options] | ['?', *options]:
@@ -107,6 +119,7 @@ if __name__ == '__main__':
                 else:
                     text = 'Quitting game'
                     game.over = True
+                    break
                 print(text)
 
     if outfile:

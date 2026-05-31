@@ -142,10 +142,9 @@ class HanabiRuleset:
         f'but cannot be replenished, since discarding is illegal if\n'\
         f'the number of hints would be brought above maximum.'
     GAME_END_DESC = \
-        f'NOT IMPLEMENTED\n'\
         f'Determines the nature of the end of the game.  If set to \n'\
-        f'"until_done", the game continues until the players run out of \n'\
-        f'misfires or complete all fireworks.  If set to \n'\
+        f'"until_done", the game continues until the players exhaust all misfires,\n'\
+        f'discard an essential card, or complete all fireworks.  If set to \n'\
         f'"final_round", after the last card is drawn, one complete \n'\
         f'round is taken, ending with the player who drew the last card,\n'\
         f'at which point the game is over.'
