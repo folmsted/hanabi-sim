@@ -77,19 +77,8 @@ if __name__ == '__main__':
             case ['play', *options] | ['p', *options]:
                 try: game, text = ih.handle_play(options, game, verbose=verbose)
                 except HanabiUserInputRequiredException as e:
-                    colors, card, position, table = e.args
-                    print(table)
-                    #TODO make input gathering a function
-                    prompt = 'Select from the table above which color '\
-                             'firework to apply this card to:'
-                    try: choice = setup_choices.pop(0).strip() if setup_choices else \
-                                  input(style_text(next(color_picker), prompt))
-                    except (KeyboardInterrupt, EOFError):
-                        print('\nProgram terminated by user.')
-                        exit(0)
-                    if outfile: outfile.write(choice + '\n')
                     game, text = ih.handle_wild_play(
-                        colors, choice, card, position, game, verbose=verbose
+                        e.args, game, setup_choices, outfile, color_picker, verbose=verbose
                     )
                 print(text)
             case ['hint', *options] | ['h', *options]:

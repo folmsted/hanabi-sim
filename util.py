@@ -84,14 +84,13 @@ def get_rules(setup_choices, outfile, color_picker):
                     print('Too many arguments; provide just a rule and a value.')
                 try: rules.change_rule(rulestr, arg[0] if arg else None)
                 except (HanabiSimException, HanabiRulesException) as e: print(e.args[0])
-                #except TypeError as e: print('Aditional input required.')
                 except HanabiRulesException as e: print(e.args[0])
     return rules
 
 def get_players(setup_choices, outfile, color_picker):
     """
     Prompt the user (or read from file) to get the players and their preferred
-    mode of organizing their hands
+    modes of organizing their hands
     """
     players = []
     protocols = []
@@ -181,7 +180,7 @@ def generate_color():
 
 def read_card(s):
     """
-    Given a user-inputted string representing a card, (specifying number and color),
+    Given a user-input string representing a card, (specifying number and color),
     return a Card object with the specified values or error correctly
     """
     n = -1
@@ -203,7 +202,7 @@ def read_card(s):
 
 def read_color_or_number(user_input):
     """
-    Given a user-inputted string, which should specify a single color or number,
+    Given a user-input string, which should specify a single color or number,
     (but not both), return the associated integer value or Color or error correctly.
     """
     try: 
@@ -213,7 +212,9 @@ def read_color_or_number(user_input):
         try:
             ret = get_color_from_str(user_input)
         except KeyError:
-            raise HanabiSimException(f'Invalid value; expected number or color; yours: {user_input}')
+            raise HanabiSimException(
+                f'Invalid value; expected number or color; yours: {user_input}'
+            )
     return ret
 
 #Given possibly bad user input, return the corresponding player or error correctly
@@ -234,6 +235,9 @@ def resolve_player(choice, game):
         raise KeyError(e.args[0])
     return player
 
+
+#TODO fix this shit, which is ugly and unclear
+#rework so we aren't relying on a[0] and other raw tuples
 ActionMetadata = namedtuple('ActionMetadata', ['rnd', 'player', 'action'])
 
 def sort_stats_playdiscardmisfire(actions, sort):

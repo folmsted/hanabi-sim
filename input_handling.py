@@ -73,7 +73,7 @@ def handle_show(choice, game):
         case ['hand', *args] | ['h', *args]:
             if len(args) > 1: return f'Unrecognized arguments {", ".join(args)}; try "help show"'
             try: player_request = args[0]
-            except: player_request = game.player_up + 1 #default is player up
+            except IndexError as e: player_request = game.player_up + 1 #default is player up
             try: player = util.resolve_player(player_request, game)
             except (KeyError, IndexError) as e: return e.args[0]
             text = str(player)
@@ -238,7 +238,18 @@ def handle_play(choice, game, verbose=False):
 
 #The logic for the "play" command after the user plays a rainbow card in wild-play
 #mode and has supplied the choice of (valid) color to which the card will apply
-def handle_wild_play(colors, choice, card, position, game, verbose=False):
+def handle_wild_play(e_args, game, setup_choices, outfile, color_picker, verbose):
+    colors, card, position, table = e_args
+    #Get the user to select a color to apply to the card
+    print(table)
+    prompt = 'Select from the above table to which color firework this card applies:'
+    try: choice = setup_choices.pop(0).strip() if setup_choices else \
+                  input(style_text(next(color_picker), prompt))
+    except (KeyboardInterrupt, EOFError):
+        print('Program terminated by user.')
+        exit(0)
+    if outfile: outfile.write(choice + '\n')
+
     #valid colors are at least 1 and at most 5, by construction, since there are
     #only ever 5, not 6 suits in wild-play mode because rainbow is not a suit.
     #Therefore we can reuse this function.
