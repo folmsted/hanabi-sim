@@ -1,9 +1,12 @@
 from game_objects import *
 from pie_chart import generate_pie_chart, DEFAULT_CHART_HEIGHT
+from rules import HanabiRuleset
+from color import Color, style_text, guess_text
 import random
 import readline
 import argparse
 from enum import Enum
+
 
 
 PROTOCOL_MAP = {
@@ -160,24 +163,6 @@ def get_players(setup_choices, outfile, color_picker):
             done = True
     return players, protocols
 
-#A generator to randomly shuffle some reasonably legible colors and return
-#them in that order forever, repeating when exhausted.
-def generate_color():
-    #Commented colors are harder to read; move pound signs to include additional colors 
-    colors =  ([
-        Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
-        Fore.MAGENTA, Fore.BLUE, Fore.CYAN, #Fore.WHITE,
-        Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
-        Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
-        Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
-    ])
-    random.shuffle(colors)
-
-    i = 0
-    while (i < len(colors)):
-        yield colors[i]
-        i = (i + 1) % len(colors)
-
 def read_card(s):
     """
     Given a user-input string representing a card, (specifying number and color),
@@ -300,9 +285,7 @@ def sort_stats_players(actions, sort):
 #Given a list of potentially repeating elemets, return a map for unique elements
 #to the number of times the element appeared in the list
 def unique_counts(l):
-    return {
-        label : len([*filter(lambda x: x == label, l)]) for label in set(l)
-    }
+    return { label : len([*filter(lambda x: x == label, l)]) for label in set(l) }
     
 
 #help strings.  Moved here because they are unruly and ugly

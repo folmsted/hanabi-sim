@@ -4,6 +4,7 @@ import input_handling as ih
 
 import util
 from game_objects import *
+from color import Color, style_text
 
  
 if __name__ == '__main__':
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     if outfile_name:
         outfile = open(outfile_name, 'w')
 
-    color_picker = util.generate_color()
+    color_picker = Color.prompt_generator
     try: rules = util.get_rules(setup_choices, outfile, color_picker)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
