@@ -1,6 +1,8 @@
+from tabulate import tabulate
 from game_state import GameState
 import util
 
+from color import Color, style_text
 from actions import HintAction, DiscardAction, PlayAction, MisfireAction
 
 from exceptions import     \
@@ -143,7 +145,7 @@ def handle_show(choice, game):
                         ] for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
-                case [player_request, *sort] | [player_request, *sort]:
+                case [player_request, *sort]:
                     try: player = util.resolve_player(player_request, game)
                     except (KeyError, IndexError) as e: return e.args[0]
                     actions = game.get_player_actions(game.players.index(player))
@@ -297,7 +299,7 @@ def handle_hint(choice, game, verbose=False):
         #player given by name
         target_player = choice[0]
     try: target_player = game.get_player(target_player)
-    except (IndexError, KeyError): return game, e.args[0]
+    except (IndexError, KeyError) as e: return game, e.args[0]
     #resolve hint
     try: hint = util.read_color_or_number(hint)
     except HanabiSimException as e: return game, e.args[0]

@@ -9,6 +9,7 @@ from card import Card, UnknownCard, RealizedCard
 from card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
 from card_collections import Hand, PlayedCards, OutstandingCards, DiscardedCards
 from player import Player
+from actions import HintAction, DiscardAction, PlayAction, MisfireAction
 from exceptions import     \
     HanabiRulesException,  \
     HanabiSimException,    \

@@ -1,3 +1,4 @@
+from tabulate import tabulate
 from color import Color
 
 from card import Card, UnknownCard, RealizedCard

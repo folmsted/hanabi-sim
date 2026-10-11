@@ -1,5 +1,6 @@
 from tabulate import tabulate
 from color import Color, style_text, guess_text
+from exceptions import HanabiSimException, HanabiRulesException
 
 MIN_CARD_VALUE = 1
 MAX_CARD_VALUE = 5
@@ -231,6 +232,7 @@ class UnknownCard:
         return rep
 
     def show_past_states(self):
+        from card_collections import Hand
         fake_hand = Hand(0, None) #a hack, but we basically want the same representation
         fake_hand.hand = [*self.previous_states, self]
         return str(fake_hand)
