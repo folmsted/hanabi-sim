@@ -1,5 +1,6 @@
 from tabulate import tabulate
-from game_objects.color import Color, style_text, guess_text
+from game_objects.color import Color
+from game_objects.styling import style_text, guess_text
 from game_objects.exceptions import HanabiSimException, HanabiRulesException
 
 MIN_CARD_VALUE = 1

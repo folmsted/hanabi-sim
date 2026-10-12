@@ -5,7 +5,7 @@ import input_handling as ih
 
 import util
 from game_objects.game_state import GameState
-from game_objects.color import Color, style_text
+from game_objects.styling import style_text, prompt_generator
 
 from game_objects.exceptions import (
     HanabiRulesException, HanabiSimException, HanabiUserInputRequiredException,
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     if outfile_name:
         outfile = open(outfile_name, 'w')
 
-    color_picker = Color.prompt_generator
+    color_picker = prompt_generator
     try: rules = util.get_rules(setup_choices, outfile, color_picker)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')

@@ -1,6 +1,7 @@
 from tabulate import tabulate
 from bisect import insort
-from game_objects.color import Color, style_text, guess_text
+from game_objects.color import Color
+from game_objects.styling import style_text, guess_text
 
 from game_objects.card import Card, UnknownCard
 from game_objects.card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES

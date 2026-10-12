@@ -1,7 +1,8 @@
 from tabulate import tabulate
 import util
 
-from game_objects.color import Color, style_text
+from game_objects.color import Color
+from game_objects.styling import style_text
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
 
 from game_objects.exceptions import (
