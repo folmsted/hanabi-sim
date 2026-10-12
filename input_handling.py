@@ -43,7 +43,7 @@ def handle_help(choice):
            text = util.help_guess
         case ['undo'] | ['u']:
            text = util.help_undo
-        case ['swap']: #TODO 'w' as a short form?
+        case ['swap']:
            text = util.help_swap
         case ['quit'] | ['q']:
            text = util.help_quit
@@ -146,7 +146,7 @@ def handle_show(choice, game):
                 case [player_request, *sort]:
                     try: player = util.resolve_player(player_request, game)
                     except HanabiInputException as e: return e.args[0]
-                    actions = game.get_actions_of_player(game.players.index(player))
+                    actions = game.get_actions_of_player(game.get_player_index(player))
                     header = ['index', 'round', f'{player.name} action']
                     try: actions_metadata = util.sort_stats_players(actions, sort)
                     except HanabiSimException as e: return e.args[0]
@@ -197,7 +197,7 @@ def handle_show(choice, game):
                      ['hint', '<',    player] | ['h', '<',    player] :
                      
                     actions = game.get_actions_of_type(HintAction)
-                    try: player_idx = game.players.index(game.get_player(player))
+                    try: player_idx = game.get_player_index(player)
                     except HanabiInputException as e: return  e.args[0]
                     target = lambda md: md.action.targetplayer_index
                     #filter out hints not from (to) the requested player

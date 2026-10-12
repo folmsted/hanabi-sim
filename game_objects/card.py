@@ -27,25 +27,25 @@ class Card:
         return self.color == other.color and self.number == other.number
 
     def __lt__(self, other):
-        if not isinstance(self, Card):
+        if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return self.color.value  * len(Color) + self.number < \
                other.color.value * len(Color) + other.number
 
     def __gt__(self, other):
-        if not isinstance(self, Card):
+        if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return self.color.value  * len(Color) + self.number > \
                other.color.value * len(Color) + other.number
 
     def __le__(self, other):
-        if not isinstance(self, Card):
+        if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return self.color.value  * len(Color) + self.number <= \
                other.color.value * len(Color) + other.number
 
     def __ge__(self, other):
-        if not isinstance(self, Card):
+        if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return self.color.value  * len(Color) + self.number >= \
                other.color.value * len(Color) + other.number
@@ -213,11 +213,11 @@ class UnknownCard:
             style_text(color, color.name[0], deterministic=True) for color in Color
         ])
         #display all possible numbers; display the guess (if any) in a special style
-        #Note we iterate on self.numbers which gives us the same order always
-        #TODO self.numbers is a set; is the consistent ordering just a coincidence or guaranteed?
+        #Note we iterate on the value range (not self.numbers, a set) to guarantee the order
         numberstr = ''.join([
             guess_text(number, str(number)) if number == self.number_guess
-            else str(number) for number in self.numbers
+            else str(number) for number in range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1)
+            if number in self.numbers
         ])
         rep = tabulate(
             [

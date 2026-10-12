@@ -126,28 +126,30 @@ class GameState:
         other_state = self.represent_general() 
         return f'General:\n{other_state}\nplay:\n{play}\ndiscard:\n{discard}\n'
 
-    #get a player specified by a number in turn order or an unambiguous string
-    #of characters which begins the player's name
-    #TODO make this function return both index and player or add a method to get the index
-    def get_player(self, specifier):
+    #get the index of a player specified by a Player, a number in turn order, or an
+    #unambiguous string of characters which begins the player's name
+    def get_player_index(self, specifier):
+        if isinstance(specifier, Player):
+            return self.players.index(specifier)
         if isinstance(specifier, int):
             if not 0 <= specifier < self.num_players:
                 raise HanabiInputException(
                     f'There is no player {specifier + 1}; number of players: {self.num_players}'
                 )
-            return self.players[specifier]
-        elif isinstance(specifier, str):
-            s = set()
-            for p in self.players:
-                if p.name.lower().startswith(specifier.lower()): s.add(p)
-            if (len(s) == 1): return s.pop()
-            else:
-                #sort by turn order so the message is deterministic
-                found = ', '.join([p.name for p in sorted(s, key=self.players.index)])
-                raise HanabiInputException(
-                    f"Specifier {specifier} failed to uniquely identify a player; "
-                    f"found [{found}] (\"show state\" for players)")
+            return specifier
+        if isinstance(specifier, str):
+            found = {i for i, p in enumerate(self.players)
+                     if p.name.lower().startswith(specifier.lower())}
+            if (len(found) == 1): return found.pop()
+            names = ', '.join([self.players[i].name for i in sorted(found)])
+            raise HanabiInputException(
+                f"Specifier {specifier} failed to uniquely identify a player; "
+                f"found [{names}] (\"show state\" for players)"
+            )
         raise HanabiInputException(f'Specified player {specifier} not found among player list.')
+
+    def get_player(self, specifier):
+        return self.players[self.get_player_index(specifier)]
 
     #returns True if there exists a way to successfully play the 5 card for every suit
     #and False otherwise

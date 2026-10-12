@@ -136,9 +136,7 @@ class Player:
         """
         Perform a play action for a game which has rainbow cards set to wild play mode.
         """
-        #TODO user input
         new_state = game.copy()
-        #import pdb; pdb.set_trace()
         realized_identity = Card(color_choice, card.number)
         realized = RealizedCard(realized_identity, self.hand[position], was_rainbow=True)
         new_state.turns_taken.append(PlayAction(realized))
@@ -187,9 +185,9 @@ class Player:
             new_player.hand = new_player.hand.process_hint(
                                   positions, hint, game.rules, new_state.round, self.name)
         except (HanabiIndexException, HanabiSimException) as e: raise e
-        new_state.players[game.players.index(target_player)] = new_player
+        new_state.players[game.get_player_index(target_player)] = new_player
         new_state.advance_turn()
-        hint = HintAction(game.players.index(target_player), hint,\
+        hint = HintAction(game.get_player_index(target_player), hint,\
                           positions, target_player.hand, new_player.hand)
         new_state.turns_taken.append(hint)
         if verbose: print(str(new_player))
@@ -208,7 +206,7 @@ class Player:
         new_player = self.copy()
         try: new_player.hand = new_player.hand.process_guess(position, guess, game.rules)
         except (HanabiSimException, HanabiIndexException) as e: raise e
-        new_state.players[game.players.index(self)] = new_player
+        new_state.players[game.get_player_index(self)] = new_player
         new_state.previous_state = game
         if verbose: print(str(new_player))
         return new_state
@@ -235,7 +233,7 @@ class Player:
         new_player = self.copy()
         try: new_player.hand = new_player.hand.process_swap(pos1, pos2)
         except HanabiIndexException as e: raise e
-        new_state.players[game.players.index(self)] = new_player
+        new_state.players[game.get_player_index(self)] = new_player
         new_state.previous_state = game
         if verbose: print(str(new_player))
         return new_state
