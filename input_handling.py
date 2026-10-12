@@ -96,7 +96,7 @@ def handle_show(choice, game):
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
-                         md.rnd + 1,
+                         md.round,
                          game.players[md.player].name,
                          md.action.realized
                         ] for index, md in enumerate(action_metadata)
@@ -109,7 +109,7 @@ def handle_show(choice, game):
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
-                         md.rnd + 1,
+                         md.round,
                          game.players[md.player].name,
                          md.action.realized
                         ] for index, md in enumerate(action_metadata)
@@ -122,7 +122,7 @@ def handle_show(choice, game):
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
-                         md.rnd + 1,
+                         md.round,
                          game.players[md.player].name,
                          md.action.realized
                         ] for index, md in enumerate(action_metadata)
@@ -135,7 +135,7 @@ def handle_show(choice, game):
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
-                         md.rnd + 1,
+                         md.round,
                          game.players[md.player].name,
                          game.players[md.action.targetplayer_index].name,
                          ', '.join([str(p + 1) for p in md.action.positions]),
@@ -146,15 +146,13 @@ def handle_show(choice, game):
                 case [player_request, *sort]:
                     try: player = util.resolve_player(player_request, game)
                     except HanabiInputException as e: return e.args[0]
-                    actions = game.get_player_actions(game.players.index(player))
-                    #don't care about sorting one player's actions by player, omit it
-                    actions = [(rnd, act) for rnd, act in enumerate(actions)]
+                    actions = game.get_actions_of_player(game.players.index(player))
                     header = ['index', 'round', f'{player.name} action']
-                    #TODO make this use metadata and let sorting preserve round data
-                    actions_metadata = util.sort_stats_players(actions, sort)
+                    try: actions_metadata = util.sort_stats_players(actions, sort)
+                    except HanabiSimException as e: return e.args[0]
                     rows = [
                         [i + 1,
-                        md.rnd + 1,
+                        md.round,
                         f'Played {md.action.realized}'
                         if isinstance(md.action, PlayAction) else
                         f'Discarded {md.action.realized}'
@@ -185,7 +183,7 @@ def handle_show(choice, game):
                              ('Hint', HintAction) if args[0] in {'hint', 'h'} else '?????'
                      
                     actions = game.get_actions_of_type(tp)
-                    action_takers = [game.players[action[1]].name for action in actions]
+                    action_takers = [game.players[md.player].name for md in actions]
                     #Generate map from names to times taking PlayAction
                     data = {
                         name : len([*filter(lambda x: x == name, action_takers)])
@@ -201,15 +199,18 @@ def handle_show(choice, game):
                     actions = game.get_actions_of_type(HintAction)
                     try: player_idx = game.players.index(game.get_player(player))
                     except HanabiInputException as e: return  e.args[0]
+                    target = lambda md: md.action.targetplayer_index
                     #filter out hints not from (to) the requested player
-                    actions = \
-                        filter(lambda x: x[1]==player_idx, actions) if args[1] in {'from', '<'} \
-                        else filter(lambda x: x[2].targetplayer_index == player_idx, actions)
+                    if args[1] in {'from', '<'}:
+                        actions = [md for md in actions if md.player == player_idx]
+                    else:
+                        actions = [md for md in actions if target(md) == player_idx]
                     #TODO add options to make charts of other facts than just hint giver/receiver
                     #get just the name of the hint giver (receiver)
-                    actions = \
-                        [game.get_player(t[1]).name for t in actions] if args[1] in {'to', '>'} \
-                        else [game.get_player(t[2].targetplayer_index).name for t in actions]
+                    if args[1] in {'to', '>'}:
+                        actions = [game.players[md.player].name for md in actions]
+                    else:
+                        actions = [game.players[target(md)].name for md in actions]
                     #don't put the target player in the chart; he can't hint himself
                     #but do put other players in even if they haven't hinted the target
                     #(or been hinted by the target)

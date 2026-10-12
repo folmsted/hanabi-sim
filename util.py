@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 from game_objects.game_state import GameState
 from game_objects.rules import HanabiRuleset
 from game_objects.color import Color, style_text
@@ -217,64 +215,46 @@ def resolve_player(choice, game):
     return game.get_player(player_request)
 
 
-#TODO fix this shit, which is ugly and unclear
-#rework so we aren't relying on a[0] and other raw tuples
-ActionMetadata = namedtuple('ActionMetadata', ['rnd', 'player', 'action'])
+def _playdiscardmisfire_sort_key(md, field):
+    if 'round'.startswith(field):  return md.round
+    if 'player'.startswith(field): return md.player
+    if 'card'.startswith(field):   return md.action.realized.identity
+    raise HanabiSimException(f'Unrecognized options "{field}".')
 
-def sort_stats_playdiscardmisfire(actions, sort):
-    #package the metadata up in a nice object for sorting
-    actions_metadata = [ActionMetadata(a[0], a[1], a[2]) for a in actions]
-    if not sort: return actions_metadata
+def sort_stats_playdiscardmisfire(metadata, sort):
+    if not sort: return metadata
     if len(sort) > 1: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    sort = sort[0]
-    #define a function for sorting the actions according to requested sort field
-    key = lambda metadata: metadata.rnd         if  'round'.startswith(sort) else \
-                           metadata.player      if 'player'.startswith(sort) else \
-                           metadata.action.realized.identity if   'card'.startswith(sort) else \
-                           0 #default to no sorting if nothing matches
-    actions_metadata.sort(key = key)
-    return actions_metadata
+    return sorted(metadata, key=lambda md: _playdiscardmisfire_sort_key(md, sort[0].lower()))
 
-def sort_stats_hints(actions, sort):
-    #package the metadata up in a nice object for sorting
-    actions_metadata = [ActionMetadata(a[0], a[1], a[2]) for a in actions]
-    if not sort: return actions_metadata
+def _hint_sort_key(md, field):
+    if 'round'.startswith(field):  return md.round
+    if 'giver'.startswith(field):  return md.player
+    if 'target'.startswith(field): return md.action.targetplayer_index
+    if 'number'.startswith(field): return len(md.action.positions)
+    if 'hint'.startswith(field):
+        #number hints sort before color hints; colors are offset past the numbers
+        hint = md.action.hint
+        return hint if isinstance(hint, int) else hint.value + len(Color)
+    raise HanabiSimException(f'Unrecognized options "{field}".')
+
+def sort_stats_hints(metadata, sort):
+    if not sort: return metadata
     if len(sort) > 1: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    sort = sort[0]
-    #If sorting by hint is requested, we sort by number hints first then color hints
-    #second.  Since hints are either an int (1-5) or a Color, we cannot compare them
-    #directly, so we take numbers at face value (1-5) and Colors as their enum value
-    #(1-6) PLUS the total number of Colors (6) so that Colors hints get a higher
-    #value than number hints and so are sorted last in the list, as desired.
-    key = lambda metadata:                                                              \
-        metadata.rnd                          if 'round'.startswith(sort.lower())  else \
-        metadata.player                       if 'giver'.startswith(sort.lower())  else \
-        metadata.action.targetplayer_index    if 'target'.startswith(sort.lower()) else \
-        len(metadata.action.positions)        if 'number'.startswith(sort.lower()) else \
-        metadata.action.hint if isinstance(metadata.action.hint, int) else \
-        metadata.action.hint.value + len(Color)                            \
-                                              if  'hint'.startswith(sort.lower())  else \
-        0 #default to no sorting if nothing matches
-        
+    return sorted(metadata, key=lambda md: _hint_sort_key(md, sort[0].lower()))
 
-    actions_metadata.sort(key=key)
-    return actions_metadata
+def _player_sort_key(md, field):
+    if 'round'.startswith(field):  return md.round
+    if 'action'.startswith(field):
+        return isinstance(md.action, HintAction)    * 1 + \
+               isinstance(md.action, PlayAction)    * 2 + \
+               isinstance(md.action, DiscardAction) * 3 + \
+               isinstance(md.action, MisfireAction) * 4
+    raise HanabiSimException(f'Unrecognized options "{field}".')
 
-#TODO add options for sorting a player's action... or resolve not to
-def sort_stats_players(actions, sort):
-    #give a dummy string for player; we don't care about it
-    actions_metadata = [ActionMetadata(a[0], '', a[1]) for a in actions]
-    if not sort: return actions_metadata
+def sort_stats_players(metadata, sort):
+    if not sort: return metadata
     if len(sort) > 1: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
-    sort = sort[0]
-    #Just separate the different action types for now
-    key = lambda metadata: \
-        isinstance(metadata.action, HintAction)    * 1 + \
-        isinstance(metadata.action, PlayAction)    * 2 + \
-        isinstance(metadata.action, DiscardAction) * 3 + \
-        isinstance(metadata.action, MisfireAction) * 4
-    if 'action'.startswith(sort.lower()): actions_metadata.sort(key = key)
-    return actions_metadata
+    return sorted(metadata, key=lambda md: _player_sort_key(md, sort[0].lower()))
 
 #Given a list of potentially repeating elemets, return a map for unique elements
 #to the number of times the element appeared in the list

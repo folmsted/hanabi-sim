@@ -8,6 +8,7 @@ from game_objects.card import MAX_CARD_VALUE
 from game_objects.card_collections import PlayedCards, OutstandingCards, DiscardedCards
 from game_objects.player import Player
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from game_objects.actions import ActionMetadata
 from game_objects.exceptions import (
     HanabiRulesException, HanabiSimException, HanabiInputException,
 )
@@ -73,29 +74,31 @@ class GameState:
         table =  tabulate([fields, values], headers='firstrow', tablefmt='pretty')
         return players + table
 
-    def get_player_actions(self, player_index):
+    def get_turn_metadata(self):
         """
-        Given a player (specified by index), return all actions of this player.
+        Return one ActionMetadata per turn, pairing each action with the round
+        and acting player derived from its position in turns_taken.
+        """
+        return [
+            ActionMetadata(action, 1 + i // self.num_players, i % self.num_players)
+            for i, action in enumerate(self.turns_taken)
+        ]
+
+    def get_actions_of_player(self, player_index):
+        """
+        Return the metadata of every action taken by the given player.
         """
         if not 0 <= player_index < self.num_players:
             raise IndexError('Unreasonable player specified.')
-        return self.turns_taken[player_index::self.num_players]
+        return [md for md in self.get_turn_metadata() if md.player == player_index]
 
     def get_actions_of_type(self, typ):
         """
-        Given a type of action, return all actions of that type.
-        Because this removes turn information by changing the list structure,
-        annotate round and turn in the returned list.
+        Return the metadata of every action of the given type.
         """
         if typ not in {PlayAction, DiscardAction, MisfireAction, HintAction}:
             raise RuntimeError('Unreasonable action type queried.')
-        return [
-            (
-                i // self.num_players, #round number
-                i %  self.num_players, #player turn
-                action
-            ) for i, action in enumerate(self.turns_taken) if isinstance(action, typ)
-        ]
+        return [md for md in self.get_turn_metadata() if isinstance(md.action, typ)]
 
     def copy(self):
         cpy = GameState()

@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from game_objects.card import RealizedCard
 
 
@@ -27,5 +29,12 @@ class MisfireAction:
 
     def __init__(self, realized):
         self.realized = realized
+
+
+#An action paired with the timing context of the turn it occurred on.
+#action: a PlayAction, DiscardAction, MisfireAction, or HintAction
+#round:  the 1-based round in which the action was taken
+#player: the 0-based index of the player who took the action
+ActionMetadata = namedtuple('ActionMetadata', ['action', 'round', 'player'])
 
 
