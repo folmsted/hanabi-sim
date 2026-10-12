@@ -250,4 +250,6 @@ class Player:
         """
         Show a card in all the states it has held over time, up to and including now.
         """
-        return self.hand[position].show_past_states()
+        fake_hand = Hand(0, None) #we want Hand's formatting for a sequence of card states
+        fake_hand.hand = [*self.hand[position].previous_states, self.hand[position]]
+        return str(fake_hand)

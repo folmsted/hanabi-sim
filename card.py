@@ -231,12 +231,6 @@ class UnknownCard:
         )
         return rep
 
-    def show_past_states(self):
-        from card_collections import Hand
-        fake_hand = Hand(0, None) #a hack, but we basically want the same representation
-        fake_hand.hand = [*self.previous_states, self]
-        return str(fake_hand)
-
     def copy(self):
         cpy = UnknownCard(self.round_drawn, self.turn_updated, None)
         cpy.colors = self.colors.copy()
