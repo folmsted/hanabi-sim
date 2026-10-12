@@ -2,3 +2,4 @@ saved_games/
 __pycache__/
 features.txt
 tests/
+AGENTS.md
