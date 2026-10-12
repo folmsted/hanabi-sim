@@ -34,10 +34,10 @@ def _player_sort_key(md, field):
     if 'round'.startswith(field):  return md.round
     if 'action'.startswith(field):
         return (
-            isinstance(md.action, HintAction) * 1
-            + isinstance(md.action, PlayAction) * 2
-            + isinstance(md.action, DiscardAction) * 3
-            + isinstance(md.action, MisfireAction) * 4
+            isinstance(md.action, HintAction)    * 1 +
+            isinstance(md.action, PlayAction)    * 2 +
+            isinstance(md.action, DiscardAction) * 3 +
+            isinstance(md.action, MisfireAction) * 4
         )
     raise HanabiSimException(f'Unrecognized options "{field}".')
 

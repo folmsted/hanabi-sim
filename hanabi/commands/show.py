@@ -182,16 +182,16 @@ def show_text(choice, game):
             match args:
                 #TODO handle options or resolve not to use options
                 case (
-                    ['play', *options] | ['p', *options]
-                    | ['discard', *options] | ['d', *options]
-                    | ['misfire', *options] | ['m', *options]
-                    | ['hint', *options] | ['h', *options]
+                    ['play', *options]    | ['p', *options] |
+                    ['discard', *options] | ['d', *options] |
+                    ['misfire', *options] | ['m', *options] |
+                    ['hint', *options]    | ['h', *options]
                 ) if not options:
                     st, tp = (
-                        ('Play', PlayAction) if args[0] in {'play', 'p'}
-                        else ('Discard', DiscardAction) if args[0] in {'discard', 'd'}
-                        else ('Misfire', MisfireAction) if args[0] in {'misfire', 'm'}
-                        else ('Hint', HintAction) if args[0] in {'hint', 'h'} else '?????'
+                        ('Play', PlayAction)       if args[0] in {'play', 'p'   } else
+                        ('Discard', DiscardAction) if args[0] in {'discard', 'd'} else
+                        ('Misfire', MisfireAction) if args[0] in {'misfire', 'm'} else
+                        ('Hint', HintAction)       if args[0] in {'hint', 'h'   } else '?????'
                     )
                     actions = game.get_actions_of_type(tp)
                     action_takers = [game.players[md.player].name for md in actions]
@@ -205,10 +205,10 @@ def show_text(choice, game):
                         title, data, pie_chart.DEFAULT_CHART_HEIGHT, True
                     )
                 case (
-                    ['hint', 'to',   player] | ['h', 'to',   player]
-                    | ['hint', '>',    player] | ['h', '>',    player]
-                    | ['hint', 'from', player] | ['h', 'from', player]
-                    | ['hint', '<',    player] | ['h', '<',    player]
+                    ['hint', 'to',   player] | ['h', 'to',   player] |
+                    ['hint', '>',    player] | ['h', '>',    player] |
+                    ['hint', 'from', player] | ['h', 'from', player] |
+                    ['hint', '<',    player] | ['h', '<',    player]
                 ):
                     actions = game.get_actions_of_type(HintAction)
                     try: player_idx = game.get_player_index(player)

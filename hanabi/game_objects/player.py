@@ -36,8 +36,8 @@ class Player:
         if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
             raise HanabiSimException(f'This game has no {Color.MULTICOLOR} cards.')
         if (
-            card.color  not in self.hand[position].colors
-            or card.number not in self.hand[position].numbers
+            card.color  not in self.hand[position].colors or
+            card.number not in self.hand[position].numbers
         ):
             errstr = (
                 f'The card identity {card} which you gave was not possible '

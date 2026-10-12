@@ -30,32 +30,32 @@ class Card:
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return (
-            self.color.value  * len(Color) + self.number
-            < other.color.value * len(Color) + other.number
+            self.color.value  * len(Color) + self.number <
+            other.color.value * len(Color) + other.number
         )
 
     def __gt__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return (
-            self.color.value  * len(Color) + self.number
-            > other.color.value * len(Color) + other.number
+            self.color.value  * len(Color) + self.number >
+            other.color.value * len(Color) + other.number
         )
 
     def __le__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return (
-            self.color.value  * len(Color) + self.number
-            <= other.color.value * len(Color) + other.number
+            self.color.value  * len(Color) + self.number <=
+            other.color.value * len(Color) + other.number
         )
 
     def __ge__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
         return (
-            self.color.value  * len(Color) + self.number
-            >= other.color.value * len(Color) + other.number
+            self.color.value  * len(Color) + self.number <=
+            other.color.value * len(Color) + other.number
         )
 
     def copy(self):
@@ -267,14 +267,14 @@ class UnknownCard:
     def __eq__(self, other):
         if not isinstance(other, UnknownCard): return False
         return (
-            self.colors == other.colors
-            and self.numbers == other.numbers
-            and self.color_guess == other.color_guess
-            and self.number_guess == other.number_guess
-            and self.round_drawn == other.round_drawn
-            and self.round_updated == other.round_updated
-            and self.turn_updated == other.turn_updated
-            and self.previous_states == other.previous_states
+            self.colors == other.colors               and
+            self.numbers == other.numbers             and
+            self.color_guess == other.color_guess     and
+            self.number_guess == other.number_guess   and
+            self.round_drawn == other.round_drawn     and
+            self.round_updated == other.round_updated and
+            self.turn_updated == other.turn_updated   and
+            self.previous_states == other.previous_states
         )
 
 
