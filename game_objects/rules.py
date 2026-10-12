@@ -1,7 +1,7 @@
 from collections import namedtuple
 from tabulate import tabulate
 from game_objects.color import Color
-from game_objects.exceptions import HanabiSimException, HanabiRulesException
+from game_objects.exceptions import HanabiInputException, HanabiRulesException
 
 HanabiRule = namedtuple('HanabiRule', ['value', 'short_form', 'allowed_values', 'description'])
 
@@ -117,13 +117,13 @@ class HanabiRuleset:
         converted to the appropriate format.
         """
         try: k, v = self._get_rule(rule)
-        except KeyError: raise HanabiSimException(f'No such rule: "{rule}".')
+        except KeyError: raise HanabiInputException(f'No such rule: "{rule}".')
         if k in ('rainbow_hint', 'rainbow_play') and not self['rainbow_enabled']:
             raise HanabiRulesException('No rainbows in this game to toggle the handling of.')
         spec = self.RULES[k]
         new_value = self._parse_value(k, spec, v.value, value)
         if new_value not in v.allowed_values:
-            raise HanabiRulesException(f'Invalid option {value} for rule {k}.')
+            raise HanabiInputException(f'Invalid option {value} for rule {k}.')
         new_rule = v._replace(value=new_value)
         setattr(self, k, new_rule)
         #reset rainbow_hint and rainbow_play if we've turned rainbows off
@@ -145,13 +145,13 @@ class HanabiRuleset:
             if spec['kind'] == 'bool':
                 return not current
             if spec['kind'] == 'int':
-                raise HanabiSimException('You must input a value to give the rule.')
+                raise HanabiInputException('You must input a value to give the rule.')
             options = spec['options']
             #only a two-value rule can be toggled by omitting the new value
             if len(options) == 2:
                 return (options - {current}).pop()
             shown = ', '.join(sorted(str(o) for o in options))
-            raise HanabiSimException(f'Specify a value for rule {k}; options: {shown}')
+            raise HanabiInputException(f'Specify a value for rule {k}; options: {shown}')
         #input parsing should prevent empty or non-string values from reaching here
         if not isinstance(value, str) or value == '':
             raise RuntimeError(f'Rule value for {k!r} must be a non-empty string, got {value!r}.')
@@ -159,7 +159,7 @@ class HanabiRuleset:
             try:
                 return int(value)
             except ValueError:
-                raise HanabiSimException(f'Invalid option {value} for rule {k}')
+                raise HanabiInputException(f'Invalid option {value} for rule {k}')
         if spec['kind'] == 'bool':
             for word, parsed in cls.BOOL_WORDS.items():
                 if word.startswith(value.lower()):
@@ -169,7 +169,8 @@ class HanabiRuleset:
         return matches[0] if len(matches) == 1 else value
 
     def get_description(self, key):
-        _, v = self._get_rule(key)
+        try: _, v = self._get_rule(key)
+        except KeyError: raise HanabiInputException(f'No such rule: "{key}".')
         return v.description
 
     def _get_rule(self, key):

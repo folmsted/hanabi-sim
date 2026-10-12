@@ -5,7 +5,9 @@ from game_objects.rules import HanabiRuleset
 from game_objects.color import Color, style_text
 from game_objects.card import Card
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
-from game_objects.exceptions import HanabiRulesException, HanabiSimException
+from game_objects.exceptions import (
+    HanabiException, HanabiInputException, HanabiSimException,
+)
 from pie_chart import generate_pie_chart, DEFAULT_CHART_HEIGHT
 
 
@@ -40,7 +42,7 @@ def get_color_from_str(s):
         case s if 'multicolor'.startswith(s.lower()): return Color.MULTICOLOR
         #'r' maps to red not rainbow
         case s if 'rainbow'   .startswith(s.lower()): return Color.MULTICOLOR
-        case _ : raise KeyError(f'Input {s} does not correspond to any color.')
+        case _ : raise HanabiInputException(f'Input {s} does not correspond to any color.')
         
 def trim_comment(string, comment_delimiter=COMMENT_START):
     """
@@ -80,14 +82,12 @@ def get_rules(setup_choices, outfile, color_picker):
                 print(rules)
             case ['explain', arg]:
                 try: print(rules.get_description(arg))
-                except KeyError as e: print(e.args)
-                except Exception as e: raise e
+                except HanabiException as e: print(e.args[0])
             case [rulestr, *arg]:
                 if arg and len(arg) > 1:
                     print('Too many arguments; provide just a rule and a value.')
                 try: rules.change_rule(rulestr, arg[0] if arg else None)
-                except (HanabiSimException, HanabiRulesException) as e: print(e.args[0])
-                except HanabiRulesException as e: print(e.args[0])
+                except HanabiException as e: print(e.args[0])
     return rules
 
 def get_players(setup_choices, outfile, color_picker):
@@ -156,7 +156,7 @@ def get_players(setup_choices, outfile, color_picker):
                 protocols.append(PROTOCOL_MAP[protocol.lower()])
                 players.append(playername)
                 invalid = False
-            except:
+            except KeyError:
                 pass
         if len(players) == GameState.MAX_PLAYERS:
             print('The maximum number of players has been reached!')
@@ -173,16 +173,16 @@ def read_card(s):
     try:
         n = int(s[0])
         c = get_color_from_str(s[1:])
-    except:
+    except (ValueError, HanabiInputException):
         try:
             n = int(s[-1])
             c = get_color_from_str(s[:-1])
-        except:
-            raise ValueError(f'You must specify a number and color; your input: {s}')
+        except (ValueError, HanabiInputException):
+            raise HanabiInputException(f'You must specify a number and color; your input: {s}')
     if not (1 <= n <= 5):
-        raise ValueError(f'Illegal number ({n}) given.')
+        raise HanabiInputException(f'Illegal number ({n}) given.')
     if not isinstance(c, Color):
-        raise ValueError(f'Illegal color ({c}) given.')
+        raise HanabiInputException(f'Illegal color ({c}) given.')
     return Card(c, n)
 
 def read_color_or_number(user_input):
@@ -196,8 +196,8 @@ def read_color_or_number(user_input):
     except ValueError:
         try:
             ret = get_color_from_str(user_input)
-        except KeyError:
-            raise HanabiSimException(
+        except HanabiInputException:
+            raise HanabiInputException(
                 f'Invalid value; expected number or color; yours: {user_input}'
             )
     return ret
@@ -205,20 +205,16 @@ def read_color_or_number(user_input):
 #Given possibly bad user input, return the corresponding player or error correctly
 def resolve_player(choice, game):
     try:
-        #See if the input is an integer in closed interval [1, num_players]; convert to list index
+        #See if the input is an integer in closed interval [1, num_players]
         player_request = int(choice) - 1
-        if player_request < 0:
-            raise IndexError(f'Select a player by entering a positive integer; yours: {player_request + 1}')
     except ValueError:
         #Otherwise, assume the value is a player name in the form of a string
         player_request = choice
-    try:
-        player = game.get_player(player_request)
-    except IndexError as e:
-        raise IndexError(f'There is no player {player_request + 1}; number of players: {game.num_players}')
-    except KeyError as e:
-        raise KeyError(e.args[0])
-    return player
+    if isinstance(player_request, int) and player_request < 0:
+        raise HanabiInputException(
+            f'Select a player by entering a positive integer; yours: {player_request + 1}'
+        )
+    return game.get_player(player_request)
 
 
 #TODO fix this shit, which is ugly and unclear
@@ -236,8 +232,7 @@ def sort_stats_playdiscardmisfire(actions, sort):
                            metadata.player      if 'player'.startswith(sort) else \
                            metadata.action.card if   'card'.startswith(sort) else \
                            0 #default to no sorting if nothing matches
-    try: actions_metadata.sort(key = key)
-    except: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
+    actions_metadata.sort(key = key)
     return actions_metadata
 
 def sort_stats_hints(actions, sort):
@@ -262,8 +257,7 @@ def sort_stats_hints(actions, sort):
         0 #default to no sorting if nothing matches
         
 
-    try: actions_metadata.sort(key=key)
-    except: raise HanabiSimException(f'Unrecognized options "{" ".join(sort)}".')
+    actions_metadata.sort(key=key)
     return actions_metadata
 
 #TODO add options for sorting a player's action... or resolve not to

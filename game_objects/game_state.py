@@ -9,8 +9,7 @@ from game_objects.card_collections import PlayedCards, OutstandingCards, Discard
 from game_objects.player import Player
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
 from game_objects.exceptions import (
-    HanabiRulesException, HanabiSimException,
-    HanabiIndexException,
+    HanabiRulesException, HanabiSimException, HanabiInputException,
 )
 
 
@@ -79,7 +78,7 @@ class GameState:
         Given a player (specified by index), return all actions of this player.
         """
         if not 0 <= player_index < self.num_players:
-            raise HanabiIndexException(player_index, 'Unreasonable player specified.')
+            raise IndexError('Unreasonable player specified.')
         return self.turns_taken[player_index::self.num_players]
 
     def get_actions_of_type(self, typ):
@@ -89,7 +88,7 @@ class GameState:
         annotate round and turn in the returned list.
         """
         if typ not in {PlayAction, DiscardAction, MisfireAction, HintAction}:
-            raise HanabiSimException('Unreasonable action type queried.')
+            raise RuntimeError('Unreasonable action type queried.')
         return [
             (
                 i // self.num_players, #round number
@@ -128,10 +127,11 @@ class GameState:
     #TODO make this function return both index and player or add a method to get the index
     def get_player(self, specifier):
         if isinstance(specifier, int):
-            try: return self.players[specifier]
-            except IndexError as e:
-                raise IndexError(f'There is no {specifier} player; number of '\
-                                 f'players: {self.num_players}')
+            if not 0 <= specifier < self.num_players:
+                raise HanabiInputException(
+                    f'There is no player {specifier + 1}; number of players: {self.num_players}'
+                )
+            return self.players[specifier]
         elif isinstance(specifier, str):
             s = set()
             for p in self.players:
@@ -141,9 +141,10 @@ class GameState:
             else:
                 #sort by turn order so the message is deterministic
                 found = ', '.join([p.name for p in sorted(s, key=self.players.index)])
-                raise KeyError(f"Specifier {specifier} failed to uniquely identify a player; "
-                               f"found [{found}] (\"show state\" for players)")
-        raise KeyError(f'Specified player {specifier} not found among player list.')
+                raise HanabiInputException(
+                    f"Specifier {specifier} failed to uniquely identify a player; "
+                    f"found [{found}] (\"show state\" for players)")
+        raise HanabiInputException(f'Specified player {specifier} not found among player list.')
 
     #returns True if there exists a way to successfully play the 5 card for every suit
     #and False otherwise
