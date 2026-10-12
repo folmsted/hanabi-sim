@@ -49,7 +49,7 @@ class Hand:
             new_card_state = card.guess_number(guess)
         elif isinstance(guess, Color):
             if guess == Color.MULTICOLOR and not rules['rainbow_enabled']:
-                raise HanabiSimException(f'This game doe not have {Color.MULTICOLOR} cards.')
+                raise HanabiSimException(f'This game does not have {Color.MULTICOLOR} cards.')
             if guess not in card.colors:
                 raise HanabiSimException(f'Bad guess; color {style_text(guess, guess.name)} '
                                          f'already disqualified.')

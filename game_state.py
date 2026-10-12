@@ -142,8 +142,10 @@ class GameState:
                     s.add(p)
             if (len(s) == 1): return s.pop()
             else:
-                raise KeyError(f"Specifier {specifier} failed to uniquely identify a player; "\
-                               f"found [{', '.join([p.name for p in s])}] (\"show state\" for players)")
+                #sort by turn order so the message is deterministic
+                found = ', '.join([p.name for p in sorted(s, key=self.players.index)])
+                raise KeyError(f"Specifier {specifier} failed to uniquely identify a player; "
+                               f"found [{found}] (\"show state\" for players)")
         raise KeyError(f'Specified player {specifier} not found among player list.')
 
     #returns True if there exists a way to successfully play the 5 card for every suit
