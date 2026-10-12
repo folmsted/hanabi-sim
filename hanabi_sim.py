@@ -1,5 +1,6 @@
 import readline
 import argparse
+import random
 import input_handling as ih
 
 import util
@@ -9,7 +10,9 @@ from game_objects.color import Color, style_text
 from game_objects.exceptions import (
     HanabiRulesException, HanabiSimException, HanabiUserInputRequiredException,
 )
- 
+
+DETERMINISTIC_SEED = 0
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(prog='hanabi_sim',
@@ -18,7 +21,11 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--infile')
     parser.add_argument('-o', '--outfile')
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-d', '--deterministic', action='store_true',
+                        help='seed the RNG so randomized output is reproducible')
     args = parser.parse_args()
+    if args.deterministic:
+        random.seed(DETERMINISTIC_SEED)
     outfile_name, outfile = (args.outfile, None) if args.outfile else (None, None)
     infile_name,  infile  = (args.infile,  None) if args.infile  else (None, None)
     verbose = args.verbose
