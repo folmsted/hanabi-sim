@@ -191,7 +191,7 @@ class HanabiRuleset:
     def _format_options(options):
         if isinstance(options, range):
             return f'[{options.start}, {options.stop - 1}]'
-        return str(options).replace("'", "")
+        return '{' + ', '.join(sorted(str(o) for o in options)) + '}'
 
     def __str__(self):
         header = ['rule', 'short form', 'current value', 'possible values']
