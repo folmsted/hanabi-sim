@@ -166,7 +166,9 @@ def handle_show(choice, game):
                         else '?!? Should never happen!'
                         ] for i, md in enumerate(actions_metadata)
                     ]
-                    #TODO this sorting option is still garbage.  Make it better somehow
+                    #Note: a player's action list is heterogeneous, so 'sort' can only group
+                    #by action type; unlike hints/cards, there is no richer field to sort on.
+                    #TODO investigate whether this could or should be improved
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case _:
                     text = 'You must specify what information to show; try "help show info".'
