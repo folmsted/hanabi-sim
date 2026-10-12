@@ -1,62 +1,70 @@
 from tabulate import tabulate
 
-from hanabi import parsing, reporting, help_text, pie_chart
-from hanabi.game_objects.color import Color
-from hanabi.game_objects.styling import style_text
+from hanabi import parsing, reporting, pie_chart
+from hanabi.commands.base import Command, CommandResult
+
 from hanabi.game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from hanabi.game_objects.exceptions import HanabiInputException, HanabiSimException
 
-from hanabi.game_objects.exceptions import (
-    HanabiException, HanabiIndexException, HanabiInputException,
-    HanabiSimException, HanabiUserInputRequiredException,
-)
- 
-def handle_help(choice):
-    """
-    Print the appropriate information according to user input.
-    """
-    text = ''
-    #no options given
-    match choice:
-        case []:
-           text = help_text.help_general
-        case ['about'] | ['a']:
-           text = help_text.help_about
-        case ['help'] | ['?']:
-           text = help_text.help_help
-        case ['show', *args] | ['s', *args]:
-           match args:
-               case ['info'] | ['i']:
-                   text = help_text.help_show_info
-               case ['graph'] | ['g']:
-                   text = help_text.help_show_graph
-               case []:
-                   text = help_text.help_show
-               case _:
-                   text = f'Unrecognized arguments {" ".join(args)}'
-        case ['play'] | ['p']:
-           text = help_text.help_play
-        case ['hint'] | ['h']:
-           text = help_text.help_hint
-        case ['discard'] | ['d']:
-           text = help_text.help_discard
-        case ['guess'] | ['g']:
-           text = help_text.help_guess
-        case ['undo'] | ['u']:
-           text = help_text.help_undo
-        case ['swap']:
-           text = help_text.help_swap
-        case ['quit'] | ['q']:
-           text = help_text.help_quit
-        case _:
-            text = f'Did not recognize options {" ".join(choice)}'
-    return text
 
-def handle_about(options):
-    if options: return f'Did not recognize options {" ".join(options)}.'
-    return help_text.help_about
+SHOW_TEXT = \
+    'The "show" command, short form "s".  Used to print information.\n'\
+    'Usages:\n'\
+    'show outstanding|o (to print all outstanding cards)\n'\
+    'show state|s (to show some general game state)\n'\
+    'show play|p (to show which cards have been played successfully)\n'\
+    'show discard|d (to show which cards are out of play)\n'\
+    'show rules|r (to show the current ruleset being used)\n'\
+    'show hand|h [player] (to show the hand of [player])\n'\
+    '---> [player] can be a number indicating turn order or a\n'\
+    '     string which unambiguously identifies the player (defaults to player up).\n'\
+    '---> Output displays for each card the round drawn (RD), possible colors,\n'\
+    '     round (RU) and turn (TU) last updated, and possible numbers.\n'\
+    'show card|c <player> <position> (to show information about a card in <player>\'s hand)\n'\
+    'This shows the history of all past states the card has had, and when.\n'\
+    '---> <player> can be a number indicating turn order or a\n'\
+    '     string which unambiguously identifies the player.\n'\
+    'show info|i <option> [sort] (to show statistics about the game so far)\n'\
+    '---> For detailed information on show info, use "help show info".\n'\
+    'show graph|g <options> (to graph information about the game so far)\n'\
+    '---> For detailed information on show graph, use "help show graph".'
+
+SHOW_INFO_TEXT = \
+    'The "show" command\'s "info" option.  Used to show statistics about the game so far.\n'\
+    'Usage:\n'\
+    'show info|i <option> [sort]\n'\
+    '---> <option> can be a player or a type of information to be printed.\n'\
+    '     If player, must be number or string which unambiguously identifies a player.\n'\
+    '     Else, is an option:\n'\
+    '     play|p for plays; discard|d for discards; misfire|m for misfires; hint|h for hints\n'\
+    '---> [sort] specifies which information to sort by.\n'\
+    '     sort options for plays, discards, and misfires:\n'\
+    '         round|r for round performed (default);\n'\
+    '         player|p for player performing action;\n'\
+    '         card|c for card acted upon.\n'\
+    '     sort options for hint:\n'\
+    '         round|r for round performed (default);\n'\
+    '         giver|g for giver of hint;\n'\
+    '         target|t for recipient of hint;\n'\
+    '         number|n for number of positions hinted;\n'\
+    '         hint|h for hint given (color or number).\n'\
+    '     sort options for players:\n'\
+    '         round|r for round performed (default);\n'\
+    '         action|a for action taken.'
+
+SHOW_GRAPH_TEXT = \
+    'The "show command\'s "graph" option.  used to graph statistics about the game so far.\n'\
+    'Usage:\n'\
+    'show graph|g <options>\n'\
+    '---> <options> can be one of {play|p, discard|d, misfire|m, hint|h} to print\n'\
+    '     a graph of percentages of plays/discards/misfires/hints performed by each player.\n'\
+    '---> If using the hint option, one can use additional arguments:\n'\
+    '         to|> <player> to graph percentages of hints to <player>, by giver;\n'\
+    '         from|< <player> to graph percentages of hints from <player>, by destination.'
+
 
 #The logic for the "show" command
-def handle_show(choice, game):
+def show_text(choice, game):
     match choice:
         case []:
             text = 'This command requires further arguments; try "help show"'
@@ -178,7 +186,6 @@ def handle_show(choice, game):
                              ('Discard', DiscardAction) if args[0] in {'discard', 'd'} else \
                              ('Misfire', MisfireAction) if args[0] in {'misfire', 'm'} else \
                              ('Hint', HintAction) if args[0] in {'hint', 'h'} else '?????'
-                     
                     actions = game.get_actions_of_type(tp)
                     action_takers = [game.players[md.player].name for md in actions]
                     #Generate map from names to times taking PlayAction
@@ -194,7 +201,6 @@ def handle_show(choice, game):
                      ['hint', '>',    player] | ['h', '>',    player] | \
                      ['hint', 'from', player] | ['h', 'from', player] | \
                      ['hint', '<',    player] | ['h', '<',    player] :
-                     
                     actions = game.get_actions_of_type(HintAction)
                     try: player_idx = game.get_player_index(player)
                     except HanabiInputException as e: return  e.args[0]
@@ -225,158 +231,19 @@ def handle_show(choice, game):
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text
 
-#The logic for the "play" command
-def handle_play(choice, game, verbose=False):
-    match choice:
-        case [position, card]:
-            pass #do nothing, the case statement extracts the values for us
-        case [position, card, *args]:
-            return game, f'Unrecognized arguments: {", ".join(args)}; try "help play"'
-        case [*args]:
-            return game, 'This command requires additional input; try "help play"'
-    try: card = parsing.read_card(card)
-    except HanabiInputException as e: return game, e.args[0]
-    try: position = int(position)
-    except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
-    player = game.get_player(game.player_up)
-    try: new_state = player.perform_play(position - 1, card, game, verbose=verbose)
-    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
-    #We must kick this one upstairs; we cannot (cleanly) poll the user here
-    except HanabiUserInputRequiredException as e: raise e
-    except HanabiException as e: return game, e.args[0]
-    return new_state, 'Success; advancing turn'
 
-#The logic for the "play" command after the user plays a rainbow card in wild-play
-#mode and has supplied the choice of (valid) color to which the card will apply
-def handle_wild_play(e_args, game, setup_choices, outfile, color_picker, verbose):
-    colors, card, position, table = e_args
-    #Get the user to select a color to apply to the card
-    print(table)
-    prompt = 'Select from the above table to which color firework this card applies:'
-    try: choice = setup_choices.pop(0).strip() if setup_choices else \
-                  input(style_text(next(color_picker), prompt))
-    except (KeyboardInterrupt, EOFError):
-        print('Program terminated by user.')
-        exit(0)
-    if outfile: outfile.write(choice + '\n')
+class ShowCommand(Command):
 
-    #valid colors are at least 1 and at most 5, by construction, since there are
-    #only ever 5, not 6 suits in wild-play mode because rainbow is not a suit.
-    #Therefore we can reuse this function.
-    try: choice = parsing.read_color_or_number(choice)
-    except HanabiInputException as e: return game, e.args[0]
-    if isinstance(choice, int):
-        try: choice = colors[choice - 1]
-        except IndexError as e:
-            return game, f'Integer must be between 1 and {len(colors)}; yours: {choice}.'
-    elif isinstance(choice, Color):
-        if choice not in colors:
-            return game, f'Your color, {choice}, was not in the table of possible colors.'
-    else: return game, f'Unrecognized input {choice}.'
+    name = 'show'
+    aliases = ('s',)
+    accepts_subhelp = True
+    help = {
+        (): SHOW_TEXT,
+        ('info',): SHOW_INFO_TEXT,
+        ('i',): SHOW_INFO_TEXT,
+        ('graph',): SHOW_GRAPH_TEXT,
+        ('g',): SHOW_GRAPH_TEXT,
+    }
 
-    player = game.get_player(game.player_up)
-    try: new_state = player.perform_wild_play(position, card, choice, game, verbose=verbose)
-    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
-    except HanabiException as e: return game, e.args[0]
-    return new_state, 'Success; advancing turn'
-
-#The logic for the "hint" command
-def handle_hint(choice, game, verbose=False):
-    match choice:
-        case [target_player, *positions, hint]:
-            pass #do nothing, the case statement extracts the values for us
-        case [*args]:
-            return game, 'This command requires additional input; try "help hint"'
-    player = game.get_player(game.player_up) #the player whose turn it is
-    #resolve target player
-    try:
-        #player given by turn order
-        target_player = int(choice[0]) #the player receiving the hint
-        if target_player < 1 or target_player > game.num_players:
-            return game, (
-                f'Could not find a player {target_player}; '
-                f'total players: {game.num_players}'
-            )
-        target_player = target_player - 1
-    except ValueError:
-        #player given by name
-        target_player = choice[0]
-    try: target_player = game.get_player(target_player)
-    except HanabiInputException as e: return game, e.args[0]
-    #resolve hint
-    try: hint = parsing.read_color_or_number(hint)
-    except HanabiInputException as e: return game, e.args[0]
-    #resolve positions
-    if (not positions): return game, 'You must specify positions to hint to.'
-    try:
-        #correction for convention of 1-indexed cards
-        positions = [int(p) - 1 for p in positions]
-    except ValueError:
-        return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
-    #do the hint
-    try: new_state = player.perform_hint(target_player, positions, hint, game, verbose=verbose)
-    except HanabiIndexException as e: return game, f'Position {e.index + 1}: {e.args[0]}'
-    except HanabiException as e: return game, e.args[0]
-    return new_state, 'Success; advancing turn'
-
-#The logic for the "discard" command
-def handle_discard(choice, game, verbose=False):
-    match choice:
-        case [position, card]:
-            pass #do nothing, the case statement extracts the values for us
-        case [position, card, *args]:
-            return game, f'Unrecognized arguments: {", ".join(args)}; try "help discard"'
-        case [*args]:
-            return game, 'This command requires additional input; try "help discard"'
-    try: card = parsing.read_card(card)
-    except HanabiInputException as e: return game, e.args[0]
-    try: position = int(position)
-    except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
-    player = game.get_player(game.player_up)
-    try: new_state = player.perform_discard(position - 1, card, game, verbose=verbose)
-    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
-    except HanabiException as e: return game, e.args[0]
-    return new_state, 'Success; advancing turn'
-
-#The logic for the "guess" command
-def handle_guess(choice, game, verbose=False):
-    match choice:
-        case [player, position, guess]:
-            pass #do nothing, the case statement extracts the values for us
-        case [player, position, guess, *args]:
-            return game, f'Unrecognized arguments: {", ".join(args)}; try "help guess"'
-        case [*args]:
-            return game, 'This command requires additional input; try "help guess"'
-    try: player = parsing.resolve_player(player, game)
-    except HanabiInputException as e: return game, e.args[0]
-    try: guess = parsing.read_color_or_number(guess)
-    except HanabiInputException as e: return game, e.args[0]
-    try: position = int(position)
-    except ValueError: return game, f'Invalid position; expected number 1 to 5; yours: {position}'
-    #apply the guess
-    try: new_state = player.perform_guess(position - 1, guess, game, verbose=verbose)
-    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
-    except HanabiException as e: return game, e.args[0]
-    return new_state, 'Success' 
-
-#The logic for the "swap" command
-def handle_swap(choice, game, verbose=False):
-    match choice:
-        case [player, index1, index2]:
-            pass #do nothing; the case statement extracts the values for us
-        case [player, index1, index2, *args]:
-            #too many options
-            return game, f'Unrecognized arguments: {", ".join(args)}; try "help swap"'
-        case [*args]:
-            #too few options
-            return game, 'This command requires additional input; try "help swap"'
-    try: player = parsing.resolve_player(player, game)
-    except HanabiInputException as e: return game, e.args[0]
-    try: index1, index2 = int(index1), int(index2)
-    except ValueError: return game, f'Integers expected as indices; yours: {index1, index2}'
-    try: new_state = player.perform_swap(index1 - 1, index2 - 1, game, verbose=verbose)
-    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
-    except HanabiException as e: return game, e.args[0]
-    return new_state, 'Success'
-
-
+    def handle(self, options, game):
+        return CommandResult(game, show_text(options, game))

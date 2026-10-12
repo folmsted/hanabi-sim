@@ -81,11 +81,11 @@ def main(argv=None):
             case []:
                 continue
             case ['help', *options] | ['?', *options]:
-                print(ih.handle_help(options))
+                print(ih.HELP.handle(options, game).text)
             case ['about', *options] | ['a', *options]:
-                print(ih.handle_about(options))
+                print(ih.ABOUT.handle(options, game).text)
             case ['show', *options] | ['s', *options]:
-                print(ih.handle_show(options, game))
+                print(ih.SHOW.handle(options, game).text)
             case ['play', *options] | ['p', *options]:
                 try: game, text = ih.handle_play(options, game, verbose=verbose)
                 except HanabiUserInputRequiredException as e:
@@ -139,8 +139,10 @@ def main(argv=None):
 
         choice = choice.split()
         if (not choice): continue
-        if (choice[0] == 'help' or choice[0] == '?'): print(ih.handle_help(choice[1:]))
-        if (choice[0] == 'show' or choice[0] == 's'): print(ih.handle_show(choice[1:], game))
+        if (choice[0] == 'help' or choice[0] == '?'):
+            print(ih.HELP.handle(choice[1:], game).text)
+        if (choice[0] == 'show' or choice[0] == 's'):
+            print(ih.SHOW.handle(choice[1:], game).text)
         if (choice[0] == 'quit' or choice[0] == 'q'): break
     return 0
 
