@@ -125,15 +125,15 @@ def generate_pie_chart(title, data, height, use_color=False):
 
 # Example usage
 def example_chart():
-	data = {
-		'Peanuts': 5,
-		'Walnuts': 18,
-		'Almonds': 10,
-		'Cashews': 2,
-		'Pecans' : 7,
-	}
+    data = {
+        'Peanuts': 5,
+        'Walnuts': 18,
+        'Almonds': 10,
+        'Cashews': 2,
+        'Pecans' : 7,
+    }
 
-	chart = generate_pie_chart('Nut', data, height=12, use_color=False)
-	print(chart)
+    chart = generate_pie_chart('Nut', data, height=12, use_color=False)
+    print(chart)
 
 if __name__ == '__main__' : example_chart()

@@ -171,8 +171,10 @@ class HanabiRuleset:
     def _get_rule(self, key):
         try: return key, vars(self)[key]
         except KeyError:
-            candidates = [(k, v) for k, v in vars(self).items() if isinstance(v, HanabiRule) \
-                                                              and v.short_form == key]
+            candidates = [
+                (k, v) for k, v in vars(self).items() if isinstance(v, HanabiRule)
+                and v.short_form == key
+            ]
             if not candidates: raise KeyError(f'{key}: no such rule found.')
             if len(candidates) > 1: raise RuntimeError('Two rules share a short form.')
             return candidates.pop()
@@ -193,6 +195,7 @@ class HanabiRuleset:
             #omit how rainbow cards are treated if they do not exist
             if name in ('rainbow_hint', 'rainbow_play') and not self['rainbow_enabled']: continue
             rule = getattr(self, name)
-            rows.append([name, rule.short_form, rule.value,
-                         self._format_options(spec['options'])])
+            rows.append(
+                [name, rule.short_form, rule.value, self._format_options(spec['options'])]
+            )
         return tabulate(rows, headers=header, tablefmt='pretty')

@@ -32,10 +32,12 @@ def get_rules(setup_choices, outfile, color_picker):
     rules = HanabiRuleset()
     done = False
     while (not done):
-        rule = setup_choices.pop(0).strip() if setup_choices else \
-                     input(style_text(next(color_picker),
-                           f'Print rules, change a rule, go to game, or ask for help with \'?\':'
-                     ))
+        rule = setup_choices.pop(0).strip() if setup_choices else input(
+            style_text(
+                next(color_picker),
+                f'Print rules, change a rule, go to game, or ask for help with \'?\':'
+            )
+        )
         if outfile: outfile.write(rule + '\n')
         rule = trim_comment(rule, COMMENT_START).strip().split()
         match rule:
@@ -73,11 +75,13 @@ def get_players(setup_choices, outfile, color_picker):
     done = False
     while (not done):
         #first, query for a player name
-        playername = setup_choices.pop(0).strip() if setup_choices else \
-                     input(style_text(next(color_picker),
-                           f'Enter player {len(players) + 1} name (16 characters max, '\
-                           f'no spaces), or nothing to proceed to game:'
-                     ))
+        playername = setup_choices.pop(0).strip() if setup_choices else input(
+            style_text(
+                next(color_picker),
+                f'Enter player {len(players) + 1} name (16 characters max, '
+                f'no spaces), or nothing to proceed to game:'
+            )
+        )
         if outfile: outfile.write(playername + '\n')
         playername = trim_comment(playername, COMMENT_START).strip()
         #check if duplicate player name
@@ -100,10 +104,13 @@ def get_players(setup_choices, outfile, color_picker):
         #second, query for a replenishment protocol
         invalid = True
         while (invalid):
-            protocol = setup_choices.pop(0).strip() if setup_choices else \
-                       input(style_text(next(color_picker),\
-                           f'Enter the replenishment protocol (in place|left shift|right shift)'\
-                           f' for player {len(players) + 1} {playername} ("?" for help):'))
+            protocol = setup_choices.pop(0).strip() if setup_choices else input(
+                style_text(
+                    next(color_picker),
+                    f'Enter the replenishment protocol (in place|left shift|right shift)'
+                    f' for player {len(players) + 1} {playername} ("?" for help):'
+                )
+            )
             if outfile: outfile.write(protocol + '\n')
             protocol = trim_comment(protocol).strip()
             if protocol == '?':

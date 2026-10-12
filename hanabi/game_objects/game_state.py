@@ -39,17 +39,24 @@ class GameState:
         self.round = self.STARTING_ROUND
         self.num_players = len(players)
         if not (self.MIN_PLAYERS <= self.num_players <= self.MAX_PLAYERS):
-            raise HanabiRulesException(f'Invalid number ({self.num_players}) of players; '\
-                                       f'{self.MIN_PLAYERS} to {self.MAX_PLAYERS} allowed.')
+            raise HanabiRulesException(
+                f'Invalid number ({self.num_players}) of players; '
+                f'{self.MIN_PLAYERS} to {self.MAX_PLAYERS} allowed.'
+            )
         if (len(protocols) != self.num_players):
-            raise HanabiSimException(f'There must be exactly one protocol per player (players: '\
-                                     f'{self.num_players}; protocols: {len(protocols)})')
-        self.players = [Player(name, \
-                               self.HAND_SIZES[self.num_players] + \
-                               self.rules['extra_cards'], self.rules, \
-                               protocol \
-                        ) \
-                        for name, protocol in zip(players, protocols)]
+            raise HanabiSimException(
+                f'There must be exactly one protocol per player (players: '
+                f'{self.num_players}; protocols: {len(protocols)})'
+            )
+        self.players = [
+            Player(
+                name,
+                self.HAND_SIZES[self.num_players] + self.rules['extra_cards'],
+                self.rules,
+                protocol,
+            )
+            for name, protocol in zip(players, protocols)
+        ]
         self.outstanding_cards = OutstandingCards(self.rules)
         self.play = PlayedCards(self.rules)
         self.discard = DiscardedCards(self.rules)
@@ -67,8 +74,10 @@ class GameState:
     def represent_general(self):
         players = 'Players (in order): ' + ', '.join([p.name for p in self.players]) + '\n'
         fields = ['Round', 'Player Up', 'Hints', 'Misfires', 'Deck Size']
-        values = [self.round, self.players[self.player_up].name, self.hints, self.misfires,
-                  self.num_in_deck]
+        values = [
+            self.round, self.players[self.player_up].name, self.hints, self.misfires,
+            self.num_in_deck,
+        ]
         if self.rules['game_end'] == 'final_round' and self.game_end_index is not None:
             fields.append('Final Player')
             values.append(self.get_player(self.game_end_index).name)
@@ -138,8 +147,10 @@ class GameState:
                 )
             return specifier
         if isinstance(specifier, str):
-            found = {i for i, p in enumerate(self.players)
-                     if p.name.lower().startswith(specifier.lower())}
+            found = {
+                i for i, p in enumerate(self.players)
+                if p.name.lower().startswith(specifier.lower())
+            }
             if (len(found) == 1): return found.pop()
             names = ', '.join([self.players[i].name for i in sorted(found)])
             raise HanabiInputException(

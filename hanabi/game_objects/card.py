@@ -134,7 +134,7 @@ class UnknownCard:
                 f'Inconsistent hints; color {style_text(color, color.name)}'\
                 f' would disqualify all possible colors for a non-hinted card.\n'\
                 f'The card:\n{str(self)}'
-            ) 
+            )
         new_state.previous_states.append(self)
         new_state.round_updated, new_state.turn_updated = (rnd, trn)
         return new_state
@@ -181,7 +181,8 @@ class UnknownCard:
         """
         if (number not in self.numbers):
             raise HanabiSimException(
-                f'Bad guess; number {number} was previously ruled out for guessed card.')
+                f'Bad guess; number {number} was previously ruled out for guessed card.'
+            )
         if number == self.number_guess: return self #nothing to do
         new_state = self.copy()
         new_state.number_guess = number
@@ -207,27 +208,33 @@ class UnknownCard:
         #don't display colors which are impossible; display all colors which are possible;
         #use a special style for the guess, if any
         #Note we iterate on enum Color (not self.colors) to guarantee the same order
-        colorstr = ''.join([
-            '' if color not in self.colors else
-            guess_text(color, color.name[0]) if color == self.color_guess else
-            style_text(color, color.name[0], deterministic=True) for color in Color
-        ])
+        colorstr = ''.join(
+            [
+                '' if color not in self.colors else
+                guess_text(color, color.name[0]) if color == self.color_guess else
+                style_text(color, color.name[0], deterministic=True)
+                for color in Color
+            ]
+        )
         #display all possible numbers; display the guess (if any) in a special style
         #Note we iterate on the value range (not self.numbers, a set) to guarantee the order
-        numberstr = ''.join([
-            guess_text(number, str(number)) if number == self.number_guess
-            else str(number) for number in range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1)
-            if number in self.numbers
-        ])
+        numberstr = ''.join(
+            [
+                guess_text(number, str(number)) if number == self.number_guess
+                else str(number)
+                for number in range(MIN_CARD_VALUE, MAX_CARD_VALUE + 1)
+                if number in self.numbers
+            ]
+        )
         rep = tabulate(
             [
                 [f'RD: {self.round_drawn}'],
                 [colorstr],
                 [f'RU: {self.round_updated}'],
                 [f'TU: {self.turn_updated}'],
-                [numberstr]
-            ], \
-            tablefmt='pretty'
+                [numberstr],
+            ],
+            tablefmt='pretty',
         )
         return rep
 

@@ -1,6 +1,7 @@
 import readline
 import argparse
 import random
+
 from hanabi import commands as ih, parsing, setup
 from hanabi.game_objects.game_state import GameState
 from hanabi.game_objects.styling import style_text, prompt_generator
@@ -11,16 +12,20 @@ from hanabi.game_objects.exceptions import (
 
 DETERMINISTIC_SEED = 0
 
+
 def main(argv=None):
 
-    parser = argparse.ArgumentParser(prog='hanabi_sim',
-                                     description='A tracker for public information in hanabi',
+    parser = argparse.ArgumentParser(
+        prog='hanabi_sim',
+        description='A tracker for public information in hanabi',
     )
     parser.add_argument('-i', '--infile')
     parser.add_argument('-o', '--outfile')
     parser.add_argument('-v', '--verbose', action='store_true')
-    parser.add_argument('-d', '--deterministic', action='store_true',
-                        help='seed the RNG so randomized output is reproducible')
+    parser.add_argument(
+        '-d', '--deterministic', action='store_true',
+        help='seed the RNG so randomized output is reproducible',
+    )
     args = parser.parse_args(argv)
     if args.deterministic: random.seed(DETERMINISTIC_SEED)
     outfile_name, outfile = (args.outfile, None) if args.outfile else (None, None)
@@ -121,9 +126,13 @@ def main(argv=None):
     choice = ''
     while (True):
         try:
-            choice = input(style_text(next(color_picker),\
-                       'You may inquire about the game, but not make plays,'\
-                       ' discards, or hints (\'q\' exits):'))
+            choice = input(
+                style_text(
+                    next(color_picker),
+                    'You may inquire about the game, but not make plays,'
+                    ' discards, or hints (\'q\' exits):',
+                )
+            )
         except (KeyboardInterrupt, EOFError):
             print('\nProgram terminated by user.')
             return 0
@@ -138,3 +147,4 @@ def main(argv=None):
 
 if __name__ == '__main__':
     raise SystemExit(main())
+

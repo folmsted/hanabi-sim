@@ -7,13 +7,13 @@ from colorama import Fore, Style
 #return them in that order forever, repeating when exhausted.
 def generate_color():
     #Commented colors are harder to read; move pound signs to include additional colors 
-    colors =  ([
-                  Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
-                  Fore.MAGENTA, Fore.CYAN, #Fore.WHITE,
-                  Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
-                  Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
-                  Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
-              ])
+    colors = [
+        Fore.RED, Fore.GREEN, Fore.YELLOW, #Fore.BLACK,
+        Fore.MAGENTA, Fore.CYAN, #Fore.WHITE,
+        Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX, #Fore.LIGHTBLACK_EX
+        Fore.LIGHTYELLOW_EX, Fore.LIGHTBLUE_EX,
+        Fore.LIGHTMAGENTA_EX, Fore.LIGHTCYAN_EX, #Fore.LIGHTWHITE_EX
+    ]
     random.shuffle(colors)
     colors.pop() # delete one at random for a little variety
 

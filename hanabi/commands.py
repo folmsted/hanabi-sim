@@ -1,6 +1,6 @@
 from tabulate import tabulate
-from hanabi import parsing, reporting, help_text, pie_chart
 
+from hanabi import parsing, reporting, help_text, pie_chart
 from hanabi.game_objects.color import Color
 from hanabi.game_objects.styling import style_text
 from hanabi.game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
@@ -95,11 +95,8 @@ def handle_show(choice, game):
                     try: action_metadata = reporting.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
-                        [index + 1,
-                         md.round,
-                         game.players[md.player].name,
-                         md.action.realized
-                        ] for index, md in enumerate(action_metadata)
+                        [index + 1, md.round, game.players[md.player].name, md.action.realized]
+                        for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case ['discard', *sort] | ['d', *sort]:
@@ -108,11 +105,8 @@ def handle_show(choice, game):
                     try: action_metadata = reporting.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
-                        [index + 1,
-                         md.round,
-                         game.players[md.player].name,
-                         md.action.realized
-                        ] for index, md in enumerate(action_metadata)
+                        [index + 1, md.round, game.players[md.player].name, md.action.realized]
+                        for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case ['misfire', *sort] | ['m', *sort]:
@@ -121,11 +115,8 @@ def handle_show(choice, game):
                     try: action_metadata = reporting.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
-                        [index + 1,
-                         md.round,
-                         game.players[md.player].name,
-                         md.action.realized
-                        ] for index, md in enumerate(action_metadata)
+                        [index + 1, md.round, game.players[md.player].name, md.action.realized]
+                        for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case ['hint', *sort] | ['h', *sort]:
@@ -134,13 +125,15 @@ def handle_show(choice, game):
                     try: action_metadata = reporting.sort_stats_hints(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
-                        [index + 1,
-                         md.round,
-                         game.players[md.player].name,
-                         game.players[md.action.targetplayer_index].name,
-                         ', '.join([str(p + 1) for p in md.action.positions]),
-                         md.action.hint
-                        ] for index, md in enumerate(action_metadata)
+                        [
+                            index + 1,
+                            md.round,
+                            game.players[md.player].name,
+                            game.players[md.action.targetplayer_index].name,
+                            ', '.join([str(p + 1) for p in md.action.positions]),
+                            md.action.hint,
+                        ]
+                        for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case [player_request, *sort]:
@@ -151,20 +144,22 @@ def handle_show(choice, game):
                     try: actions_metadata = reporting.sort_stats_players(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
-                        [i + 1,
-                        md.round,
-                        f'Played {md.action.realized}'
-                        if isinstance(md.action, PlayAction) else
-                        f'Discarded {md.action.realized}'
-                        if isinstance(md.action, DiscardAction) else
-                        f'Misfired {md.action.realized}'
-                        if isinstance(md.action, MisfireAction) else
-                        f'Hinted {game.players[md.action.targetplayer_index].name} about '\
-                        f'{md.action.hint} at positions ' \
-                        f'{", ".join([str(p + 1) for p in md.action.positions])}.'
-                        if isinstance(md.action, HintAction)
-                        else '?!? Should never happen!'
-                        ] for i, md in enumerate(actions_metadata)
+                        [
+                            i + 1,
+                            md.round,
+                            f'Played {md.action.realized}'
+                            if isinstance(md.action, PlayAction) else
+                            f'Discarded {md.action.realized}'
+                            if isinstance(md.action, DiscardAction) else
+                            f'Misfired {md.action.realized}'
+                            if isinstance(md.action, MisfireAction) else
+                            f'Hinted {game.players[md.action.targetplayer_index].name} about '
+                            f'{md.action.hint} at positions '
+                            f'{", ".join([str(p + 1) for p in md.action.positions])}.'
+                            if isinstance(md.action, HintAction)
+                            else '?!? Should never happen!',
+                        ]
+                        for i, md in enumerate(actions_metadata)
                     ]
                     #Note: a player's action list is heterogeneous, so 'sort' can only group
                     #by action type; unlike hints/cards, there is no richer field to sort on.
@@ -192,7 +187,9 @@ def handle_show(choice, game):
                         for name in [p.name for p in game.players]
                     }
                     title = f'{st} Actions by Player'
-                    text = pie_chart.generate_pie_chart(title, data, pie_chart.DEFAULT_CHART_HEIGHT, True)
+                    text = pie_chart.generate_pie_chart(
+                        title, data, pie_chart.DEFAULT_CHART_HEIGHT, True
+                    )
                 case ['hint', 'to',   player] | ['h', 'to',   player] | \
                      ['hint', '>',    player] | ['h', '>',    player] | \
                      ['hint', 'from', player] | ['h', 'from', player] | \
@@ -219,7 +216,9 @@ def handle_show(choice, game):
                     data = {p : 0 for p in eligible_players} | reporting.unique_counts(actions)
                     st = 'to' if args[1] in {'to', '>'} else 'from'
                     title = f'Hints {st} {game.get_player(player_idx).name}'
-                    text = pie_chart.generate_pie_chart(title, data, pie_chart.DEFAULT_CHART_HEIGHT, True)
+                    text = pie_chart.generate_pie_chart(
+                        title, data, pie_chart.DEFAULT_CHART_HEIGHT, True
+                    )
                 case [*args]:
                     text = f'Unrecognized arguments {"".join(args)}; try "help show graph"'
         case [*args]:
@@ -294,8 +293,10 @@ def handle_hint(choice, game, verbose=False):
         #player given by turn order
         target_player = int(choice[0]) #the player receiving the hint
         if target_player < 1 or target_player > game.num_players:
-            return game, (f'Could not find a player {target_player}; '
-                          f'total players: {game.num_players}')
+            return game, (
+                f'Could not find a player {target_player}; '
+                f'total players: {game.num_players}'
+            )
         target_player = target_player - 1
     except ValueError:
         #player given by name

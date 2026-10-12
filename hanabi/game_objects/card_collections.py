@@ -5,7 +5,9 @@ from hanabi.game_objects.styling import style_text, guess_text
 
 from hanabi.game_objects.card import Card, UnknownCard
 from hanabi.game_objects.card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
-from hanabi.game_objects.exceptions import HanabiSimException, HanabiRulesException, HanabiIndexException
+from hanabi.game_objects.exceptions import (
+    HanabiSimException, HanabiRulesException, HanabiIndexException,
+)
 
 class Hand:
     """
@@ -28,9 +30,11 @@ class Hand:
                 if hint == Color.MULTICOLOR and not rules['rainbow_enabled']:
                     raise HanabiSimException(f'This game does not have {Color.MULTICOLOR} cards.')
                 try: 
-                    new_hand.hand[i] = (card.hint_color_positive(hint, r, t, rules)
-                                        if i in positions
-                                        else card.hint_color_negative(hint, r, t, rules))
+                    new_hand.hand[i] = (
+                        card.hint_color_positive(hint, r, t, rules)
+                        if i in positions
+                        else card.hint_color_negative(hint, r, t, rules)
+                    )
                 except HanabiSimException  as e: raise HanabiIndexException(i, *e.args)
                 except HanabiRulesException as e: raise e
             else:
@@ -53,8 +57,10 @@ class Hand:
             if guess == Color.MULTICOLOR and not rules['rainbow_enabled']:
                 raise HanabiSimException(f'This game does not have {Color.MULTICOLOR} cards.')
             if guess not in card.colors:
-                raise HanabiSimException(f'Bad guess; color {style_text(guess, guess.name)} '
-                                         f'already disqualified.')
+                raise HanabiSimException(
+                    f'Bad guess; color {style_text(guess, guess.name)} '
+                    f'already disqualified.'
+                )
             new_card_state = card.guess_color(guess)
         new_hand = self.copy()
         new_hand.hand[position] = new_card_state
@@ -110,28 +116,38 @@ class Hand:
 
     def __str__(self):
         colorstrs = [
-            ''.join([
-                '' if color not in card.colors else
-                guess_text(color, color.name[0]) if color == card.color_guess else
-                style_text(color, color.name[0], deterministic=True) for color in Color
-            ]) for card in self.hand
+            ''.join(
+                [
+                    '' if color not in card.colors else
+                    guess_text(color, color.name[0]) if color == card.color_guess else
+                    style_text(color, color.name[0], deterministic=True)
+                    for color in Color
+                ]
+            )
+            for card in self.hand
         ]
         numberstrs = [
-            ''.join([
-                guess_text(number, str(number)) if number == card.number_guess
-                else str(number) for number in card.numbers
-
-            ]) for card in self.hand
+            ''.join(
+                [
+                    guess_text(number, str(number)) if number == card.number_guess
+                    else str(number)
+                    for number in card.numbers
+                ]
+            )
+            for card in self.hand
         ]
         rounds_drawn        = [f'RD: {card.round_drawn}'   for card in self.hand]
         rounds_last_updated = [f'RU: {card.round_updated}' for card in self.hand]
         turns_last_updated  = [f'TU: {card.turn_updated}'  for card in self.hand]
-        rep = tabulate([rounds_drawn,
-                       colorstrs,
-                       rounds_last_updated,
-                       turns_last_updated,
-                       numberstrs], \
-                       tablefmt='pretty'
+        rep = tabulate(
+            [
+                rounds_drawn,
+                colorstrs,
+                rounds_last_updated,
+                turns_last_updated,
+                numberstrs,
+            ],
+            tablefmt='pretty',
         )
         return rep
 
@@ -156,7 +172,8 @@ class PlayedCards:
         color = card.color
         if not (self.cards[color].number + 1 == card.number):
             raise RuntimeError(
-                f'Cannot play {card} onto {self.cards[color]}; not next in sequence.')
+                f'Cannot play {card} onto {self.cards[color]}; not next in sequence.'
+            )
         new_state = self.copy()
         new_state.cards[color] = card
         return new_state
@@ -171,8 +188,10 @@ class PlayedCards:
         return cpy
 
     def __str__(self):
-        return tabulate([[self.cards[color] for color in self.cards]],
-                        tablefmt = 'pretty')
+        return tabulate(
+            [[self.cards[color] for color in self.cards]],
+            tablefmt = 'pretty',
+        )
 
     def __getitem__(self, key):
         return self.cards[key]
@@ -205,17 +224,26 @@ class OutstandingCards:
         return len(self.cards)
 
     def __str__(self):
-        data = [[style_text(color, color.name) for color in Color \
-                 if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])]]
+        data = [
+            [
+                style_text(color, color.name) for color in Color
+                if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])
+            ]
+        ]
         #Sort outstanding cards by color
-        columns = [ [*filter(lambda card: card.color == color, self.cards)] for color in Color \
-                    if (color != Color.MULTICOLOR or self.rules['rainbow_enabled']) ]
+        columns = [
+            [*filter(lambda card: card.color == color, self.cards)]
+            for color in Color
+            if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])
+        ]
         table_length = max([len(col) for col in columns])
         #Create table rows.  Each row is the next card number of that color, or empty if no
         #cards of that color remain.
         for i in range(table_length):
-            row = [columns[j][i] if len(columns[j]) >= i + 1 else ' ' 
-                   for j in range(len(Color) - (0 if self.rules['rainbow_enabled'] else 1))]
+            row = [
+                columns[j][i] if len(columns[j]) >= i + 1 else ' '
+                for j in range(len(Color) - (0 if self.rules['rainbow_enabled'] else 1))
+            ]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
 
@@ -255,15 +283,19 @@ class DiscardedCards:
         #Have as many rows as needed to fit all the cards of the most-discarded color
         table_length = max([len(l) for l in self.cards.values()])
 
-        header = [style_text(color, color.name) for color in Color \
-                  if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])]
+        header = [
+            style_text(color, color.name) for color in Color
+            if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])
+        ]
         data = [header]
         for i in range(table_length):
             #Create table rows.  Each row is the next card number of that color, or empty if no
             #cards of that color remain.
-            row = [self.cards[color][i] if len(self.cards[color]) >= i + 1 else ' ' \
-                   for color in Color \
-                   if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])]
+            row = [
+                self.cards[color][i] if len(self.cards[color]) >= i + 1 else ' '
+                for color in Color
+                if (color != Color.MULTICOLOR or self.rules['rainbow_enabled'])
+            ]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
 

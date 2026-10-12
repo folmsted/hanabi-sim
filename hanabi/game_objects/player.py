@@ -52,8 +52,9 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self,
-                                                            game.rules)
+            new_player.hand = new_player.hand.replace_card(
+                new_state.round, position, self, game.rules
+            )
         else: del new_player.hand.hand[position]
         new_state.previous_state = game
         new_state.players[game.player_up] = new_player
@@ -99,7 +100,7 @@ class Player:
             else:
                 table = tabulate(
                     [[i + 1, color] for i, color in enumerate(valid_colors)],
-                    tablefmt='pretty'
+                    tablefmt='pretty',
                 )
                 raise HanabiUserInputRequiredException(valid_colors, card, position, table)
         else: #card.color != Color.MULTICOLOR or game.rules['rainbow_play'] == 'suit'
@@ -123,8 +124,9 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self,
-                                                            game.rules)
+            new_player.hand = new_player.hand.replace_card(
+                new_state.round, position, self, game.rules
+            )
         else: del new_player.hand.hand[position]
         new_state.previous_state = game
         new_state.players[game.player_up] = new_player
@@ -151,8 +153,9 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self,
-                                                            game.rules)
+            new_player.hand = new_player.hand.replace_card(
+                new_state.round, position, self, game.rules
+            )
         else: del new_player.hand.hand[position]
         new_state.previous_state = game
         new_state.players[game.player_up] = new_player
@@ -183,12 +186,15 @@ class Player:
         new_player = target_player.copy()
         try:
             new_player.hand = new_player.hand.process_hint(
-                                  positions, hint, game.rules, new_state.round, self.name)
+                positions, hint, game.rules, new_state.round, self.name
+            )
         except (HanabiIndexException, HanabiSimException) as e: raise e
         new_state.players[game.get_player_index(target_player)] = new_player
         new_state.advance_turn()
-        hint = HintAction(game.get_player_index(target_player), hint,\
-                          positions, target_player.hand, new_player.hand)
+        hint = HintAction(
+            game.get_player_index(target_player), hint,
+            positions, target_player.hand, new_player.hand
+        )
         new_state.turns_taken.append(hint)
         if verbose: print(str(new_player))
         return new_state
