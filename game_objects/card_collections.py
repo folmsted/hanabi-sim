@@ -41,7 +41,8 @@ class Hand:
 
     def process_guess(self, position, guess, rules):
         try: card = self.hand[position]
-        except IndexError: raise HanabiIndexException(position)
+        except IndexError:
+            raise HanabiIndexException(position, 'the position given was not in range.')
         if isinstance(guess, int):
             if guess not in card.numbers:
                 raise HanabiSimException(f'Bad guess; number {guess} already disqualified.')
@@ -58,8 +59,10 @@ class Hand:
         return new_hand
 
     def process_swap(self, index1, index2):
-        if not 0 <= index1 < len(self): raise HanabiIndexException(index1)
-        if not 0 <= index2 < len(self): raise HanabiIndexException(index2)
+        if not 0 <= index1 < len(self):
+            raise HanabiIndexException(index1, 'the position given was not in range.')
+        if not 0 <= index2 < len(self):
+            raise HanabiIndexException(index2, 'the position given was not in range.')
         new_hand = self.copy()
         new_hand.hand[index1], new_hand.hand[index2] = new_hand[index2], new_hand[index1]
         return new_hand
@@ -149,7 +152,9 @@ class PlayedCards:
 
     def add(self, card):
         color = card.color
-        if not (self.cards[color].number + 1 == card.number): raise HanabiSimException('')#TODO be more elegant here
+        if not (self.cards[color].number + 1 == card.number):
+            raise RuntimeError(
+                f'Cannot play {card} onto {self.cards[color]}; not next in sequence.')
         new_state = self.copy()
         new_state.cards[color] = card
         return new_state

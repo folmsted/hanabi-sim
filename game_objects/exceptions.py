@@ -3,11 +3,6 @@ class HanabiRulesException(Exception):
     Used when an action would break a rule of Hanabi.
     Example: hinting oneself.
     """
-    def __init__(self, *args):
-        super().__init__(*args)
-
-    def __str__(self):
-        return f'{self.message}'
 
 class HanabiSimException(Exception):
     """
@@ -15,13 +10,7 @@ class HanabiSimException(Exception):
     the current simulation.
     Example: Discarding the red 5 when it is already played
     """
-    def __init__(self, *args):
-        super().__init__(*args)
 
-    def __str__(self):
-        return f'{self.message}'
-
-#Useful when a problem occurs 
 class HanabiIndexException(Exception):
     """
     Used when an action doesn't make sense, and the action takes
@@ -43,7 +32,3 @@ class HanabiUserInputRequiredException(Exception):
     and the choice of which firework to apply a rainbow card to must
     be resolved.
     """
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        

@@ -264,6 +264,8 @@ class UnknownCard:
 class RealizedCard:
     """
     A card of known value or number because it was played or discarded.
+
+    STUB: reserved for future functionality; not yet constructed anywhere.
     """
     def __init__(self, identity, unrealized_state, was_rainbow = False):
         self.identity = identity #Card object
