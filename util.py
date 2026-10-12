@@ -1,12 +1,8 @@
-import random
-import readline
-import argparse
-from enum import Enum
 from collections import namedtuple
 
 from game_objects.game_state import GameState
 from game_objects.rules import HanabiRuleset
-from game_objects.color import Color, style_text, guess_text
+from game_objects.color import Color, style_text
 from game_objects.card import Card
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
 from game_objects.exceptions import HanabiRulesException, HanabiSimException

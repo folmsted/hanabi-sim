@@ -1,20 +1,17 @@
 from tabulate import tabulate
 from collections import defaultdict
-from collections import namedtuple
-import random
 
 from game_objects.rules import HanabiRuleset
-from game_objects.color import Color, style_text, guess_text
-from game_objects.card import Card, UnknownCard, RealizedCard
-from game_objects.card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
-from game_objects.card_collections import Hand, PlayedCards, OutstandingCards, DiscardedCards
+from game_objects.color import Color
+from game_objects.card import Card
+from game_objects.card import MAX_CARD_VALUE
+from game_objects.card_collections import PlayedCards, OutstandingCards, DiscardedCards
 from game_objects.player import Player
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
-from game_objects.exceptions import \
-    HanabiRulesException,  \
-    HanabiSimException,    \
-    HanabiIndexException,  \
-    HanabiUserInputRequiredException
+from game_objects.exceptions import (
+    HanabiRulesException, HanabiSimException,
+    HanabiIndexException,
+)
 
 
 class GameState:

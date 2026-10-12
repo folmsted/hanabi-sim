@@ -1,15 +1,13 @@
 from tabulate import tabulate
-from game_objects.game_state import GameState
 import util
 
 from game_objects.color import Color, style_text
 from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
 
-from game_objects.exceptions import     \
-    HanabiRulesException,  \
-    HanabiSimException,    \
-    HanabiIndexException,  \
-    HanabiUserInputRequiredException
+from game_objects.exceptions import (
+    HanabiRulesException, HanabiSimException,
+    HanabiIndexException, HanabiUserInputRequiredException,
+)
  
 def handle_help(choice):
     """
