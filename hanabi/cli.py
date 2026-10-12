@@ -84,13 +84,13 @@ def main(argv=None):
             #otherwise, proceed with the next round
             case []:
                 continue
-            case ['help', *options] | ['?', *options]:
+            case [command, *options] if HELP.matches(command):
                 print(HELP.handle(options, game).text)
-            case ['about', *options] | ['a', *options]:
+            case [command, *options] if ABOUT.matches(command):
                 print(ABOUT.handle(options, game).text)
-            case ['show', *options] | ['s', *options]:
+            case [command, *options] if SHOW.matches(command):
                 print(SHOW.handle(options, game).text)
-            case ['play', *options] | ['p', *options]:
+            case [command, *options] if PLAY.matches(command):
                 try:
                     result = PLAY.handle(options, game, verbose=verbose)
                 except HanabiUserInputRequiredException as e:
@@ -105,27 +105,27 @@ def main(argv=None):
                     result = WILD_PLAY.handle(e.args, choice, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
-            case ['hint', *options] | ['h', *options]:
+            case [command, *options] if HINT.matches(command):
                 result = HINT.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
-            case ['discard', *options] | ['d', *options]:
+            case [command, *options] if DISCARD.matches(command):
                 result = DISCARD.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
-            case ['guess', *options] | ['g', *options]:
+            case [command, *options] if GUESS.matches(command):
                 result = GUESS.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
-            case ['undo', *options] | ['u', *options]:
+            case [command, *options] if UNDO.matches(command):
                 result = UNDO.handle(options, game)
                 game = result.game
                 print(result.text)
-            case ['swap', *options]:
+            case [command, *options] if SWAP.matches(command):
                 result = SWAP.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
-            case ['quit', *options] | ['q', *options]:
+            case [command, *options] if QUIT.matches(command):
                 result = QUIT.handle(options, game)
                 game = result.game
                 if result.stop: break
@@ -149,11 +149,11 @@ def main(argv=None):
 
         choice = choice.split()
         if (not choice): continue
-        if (choice[0] == 'help' or choice[0] == '?'):
+        if (HELP.matches(choice[0])):
             print(HELP.handle(choice[1:], game).text)
-        if (choice[0] == 'show' or choice[0] == 's'):
+        if (SHOW.matches(choice[0])):
             print(SHOW.handle(choice[1:], game).text)
-        if (choice[0] == 'quit' or choice[0] == 'q'): break
+        if (QUIT.matches(choice[0])): break
     return 0
 
 
