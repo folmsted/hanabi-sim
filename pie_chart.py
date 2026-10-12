@@ -71,9 +71,8 @@ def generate_pie_chart(title, data, height, use_color=False):
     symbols = assign_symbols(categories)
     colors = assign_colors(categories) if use_color else {}
 
-    no_data = False
-    try: segments = compute_segments(data)
-    except ValueError: no_data = True
+    no_data = sum(data.values()) <= 0
+    segments = [] if no_data else compute_segments(data)
 
     cx = width / 2
     cy = height / 2

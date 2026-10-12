@@ -6,7 +6,9 @@ import util
 from game_objects.game_state import GameState
 from game_objects.color import Color, style_text
 
-from game_objects.exceptions import HanabiUserInputRequiredException
+from game_objects.exceptions import (
+    HanabiRulesException, HanabiSimException, HanabiUserInputRequiredException,
+)
  
 if __name__ == '__main__':
 
@@ -26,7 +28,7 @@ if __name__ == '__main__':
             infile = open(infile_name, 'r')
             setup_choices = infile.readlines()
             infile.close()
-        except:
+        except OSError:
             if infile: del infile
             print(f'Error reading infile; {infile_name}; infile use aborted.')
     if outfile_name:
@@ -41,7 +43,9 @@ if __name__ == '__main__':
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
         exit(0)
-    game = GameState(players, protocols, ruleset=rules)
+    try: game = GameState(players, protocols, ruleset=rules)
+    except (HanabiRulesException, HanabiSimException) as e:
+        raise RuntimeError(f'Unhandled game initialization error: {e.args[0]}') from e
 
     while (True):
         prompt = f'Ask for information with "?" or make a play '\
