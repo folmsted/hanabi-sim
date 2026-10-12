@@ -1,11 +1,11 @@
 from tabulate import tabulate
-from game_state import GameState
+from game_objects.game_state import GameState
 import util
 
-from color import Color, style_text
-from actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from game_objects.color import Color, style_text
+from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
 
-from exceptions import     \
+from game_objects.exceptions import     \
     HanabiRulesException,  \
     HanabiSimException,    \
     HanabiIndexException,  \

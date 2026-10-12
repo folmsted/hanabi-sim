@@ -1,11 +1,11 @@
 from tabulate import tabulate
 from bisect import insort
-from color import Color, style_text, guess_text
+from game_objects.color import Color, style_text, guess_text
 
-from card import Card, UnknownCard, RealizedCard
-from card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
-from actions import *
-from exceptions import HanabiSimException, HanabiRulesException, HanabiIndexException
+from game_objects.card import Card, UnknownCard, RealizedCard
+from game_objects.card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
+from game_objects.actions import *
+from game_objects.exceptions import HanabiSimException, HanabiRulesException, HanabiIndexException
 
 class Hand:
     """

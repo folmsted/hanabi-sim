@@ -3,14 +3,14 @@ from collections import defaultdict
 from collections import namedtuple
 import random
 
-from rules import HanabiRuleset
-from color import Color, style_text, guess_text
-from card import Card, UnknownCard, RealizedCard
-from card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
-from card_collections import Hand, PlayedCards, OutstandingCards, DiscardedCards
-from player import Player
-from actions import HintAction, DiscardAction, PlayAction, MisfireAction
-from exceptions import     \
+from game_objects.rules import HanabiRuleset
+from game_objects.color import Color, style_text, guess_text
+from game_objects.card import Card, UnknownCard, RealizedCard
+from game_objects.card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
+from game_objects.card_collections import Hand, PlayedCards, OutstandingCards, DiscardedCards
+from game_objects.player import Player
+from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from game_objects.exceptions import \
     HanabiRulesException,  \
     HanabiSimException,    \
     HanabiIndexException,  \

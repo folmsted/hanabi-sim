@@ -3,10 +3,10 @@ import argparse
 import input_handling as ih
 
 import util
-from game_state import GameState
-from color import Color, style_text
+from game_objects.game_state import GameState
+from game_objects.color import Color, style_text
 
-from exceptions import HanabiUserInputRequiredException
+from game_objects.exceptions import HanabiUserInputRequiredException
  
 if __name__ == '__main__':
 

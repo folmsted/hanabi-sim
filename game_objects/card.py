@@ -1,6 +1,6 @@
 from tabulate import tabulate
-from color import Color, style_text, guess_text
-from exceptions import HanabiSimException, HanabiRulesException
+from game_objects.color import Color, style_text, guess_text
+from game_objects.exceptions import HanabiSimException, HanabiRulesException
 
 MIN_CARD_VALUE = 1
 MAX_CARD_VALUE = 5

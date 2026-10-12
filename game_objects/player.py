@@ -1,12 +1,12 @@
 from tabulate import tabulate
-from color import Color
+from game_objects.color import Color
 
-from card import Card, UnknownCard, RealizedCard
-from card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
-from card_collections import Hand, PlayedCards, OutstandingCards, DiscardedCards
+from game_objects.card import Card, UnknownCard, RealizedCard
+from game_objects.card import MIN_CARD_VALUE, MAX_CARD_VALUE, CARD_FREQUENCIES
+from game_objects.card_collections import Hand, PlayedCards, OutstandingCards, DiscardedCards
 
-from actions import *
-from exceptions import *
+from game_objects.actions import *
+from game_objects.exceptions import *
 
 class Player:
     """

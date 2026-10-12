@@ -1,7 +1,7 @@
 from collections import namedtuple
 from tabulate import tabulate
-from color import Color
-from exceptions import HanabiSimException, HanabiRulesException
+from game_objects.color import Color
+from game_objects.exceptions import HanabiSimException, HanabiRulesException
 
 HanabiRule = namedtuple('HanabiRule', ['value', 'short_form', 'allowed_values', 'description'])
 
