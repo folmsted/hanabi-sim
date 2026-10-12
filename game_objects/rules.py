@@ -142,28 +142,23 @@ class HanabiRuleset:
         non-string values from reaching here.
         """
         if value is None:
-            if spec['kind'] == 'bool':
-                return not current
+            if spec['kind'] == 'bool': return not current
             if spec['kind'] == 'int':
                 raise HanabiInputException('You must input a value to give the rule.')
             options = spec['options']
             #only a two-value rule can be toggled by omitting the new value
-            if len(options) == 2:
-                return (options - {current}).pop()
+            if len(options) == 2: return (options - {current}).pop()
             shown = ', '.join(sorted(str(o) for o in options))
             raise HanabiInputException(f'Specify a value for rule {k}; options: {shown}')
         #input parsing should prevent empty or non-string values from reaching here
         if not isinstance(value, str) or value == '':
             raise RuntimeError(f'Rule value for {k!r} must be a non-empty string, got {value!r}.')
         if spec['kind'] == 'int':
-            try:
-                return int(value)
-            except ValueError:
-                raise HanabiInputException(f'Invalid option {value} for rule {k}')
+            try: return int(value)
+            except ValueError: raise HanabiInputException(f'Invalid option {value} for rule {k}')
         if spec['kind'] == 'bool':
             for word, parsed in cls.BOOL_WORDS.items():
-                if word.startswith(value.lower()):
-                    return parsed
+                if word.startswith(value.lower()): return parsed
             return value
         matches = [o for o in sorted(spec['options']) if o.startswith(value.lower())]
         return matches[0] if len(matches) == 1 else value
@@ -174,8 +169,7 @@ class HanabiRuleset:
         return v.description
 
     def _get_rule(self, key):
-        try:
-            return key, vars(self)[key]
+        try: return key, vars(self)[key]
         except KeyError:
             candidates = [(k, v) for k, v in vars(self).items() if isinstance(v, HanabiRule) \
                                                               and v.short_form == key]
@@ -189,8 +183,7 @@ class HanabiRuleset:
 
     @staticmethod
     def _format_options(options):
-        if isinstance(options, range):
-            return f'[{options.start}, {options.stop - 1}]'
+        if isinstance(options, range): return f'[{options.start}, {options.stop - 1}]'
         return '{' + ', '.join(sorted(str(o) for o in options)) + '}'
 
     def __str__(self):
@@ -198,8 +191,7 @@ class HanabiRuleset:
         rows = []
         for name, spec in self.RULES.items():
             #omit how rainbow cards are treated if they do not exist
-            if name in ('rainbow_hint', 'rainbow_play') and not self['rainbow_enabled']:
-                continue
+            if name in ('rainbow_hint', 'rainbow_play') and not self['rainbow_enabled']: continue
             rule = getattr(self, name)
             rows.append([name, rule.short_form, rule.value,
                          self._format_options(spec['options'])])

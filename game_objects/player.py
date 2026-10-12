@@ -52,9 +52,9 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self, game.rules)
-        else:
-            del new_player.hand.hand[position]
+            new_player.hand = new_player.hand.replace_card(new_state.round, position, self,
+                                                            game.rules)
+        else: del new_player.hand.hand[position]
         new_state.previous_state = game
         new_state.players[game.player_up] = new_player
         new_state.advance_turn()
@@ -123,9 +123,9 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self, game.rules)
-        else:
-            del new_player.hand.hand[position]
+            new_player.hand = new_player.hand.replace_card(new_state.round, position, self,
+                                                            game.rules)
+        else: del new_player.hand.hand[position]
         new_state.previous_state = game
         new_state.players[game.player_up] = new_player
         new_state.advance_turn()
@@ -153,9 +153,9 @@ class Player:
         new_player = self.copy()
         if (new_state.num_in_deck > 0):
             new_state.num_in_deck -= 1
-            new_player.hand = new_player.hand.replace_card(new_state.round, position, self, game.rules)
-        else:
-            del new_player.hand.hand[position]
+            new_player.hand = new_player.hand.replace_card(new_state.round, position, self,
+                                                            game.rules)
+        else: del new_player.hand.hand[position]
         new_state.previous_state = game
         new_state.players[game.player_up] = new_player
         new_state.advance_turn()
@@ -166,10 +166,8 @@ class Player:
         """
         Attempt to perform a hint, updating the game state and the hand of the hinted player.
         """
-        if game.hints <= 0:
-            raise HanabiRulesException('Cannot give a hint while no hints remain!')
-        if self == target_player:
-            raise HanabiRulesException('One cannot give a hint to oneself!')
+        if game.hints <= 0: raise HanabiRulesException('Cannot give a hint while no hints remain!')
+        if self == target_player: raise HanabiRulesException('One cannot give a hint to oneself!')
         if (not (isinstance(hint, int) or isinstance(hint, Color))):
             raise HanabiSimException(f'Invalid hint given: {hint}')
         if not positions: raise HanabiSimException(f'You must specify the positions hinted.')
@@ -231,8 +229,7 @@ class Player:
             errstr = f'nonnegative integers not exceeding hand size '\
                      f'expected; hand size: {len(self.hand)}.'
             raise HanabiIndexException(pos2, errstr)
-        if pos1 == pos2:
-            raise HanabiSimException(f'Identical integers given; no swap to make.')
+        if pos1 == pos2: raise HanabiSimException(f'Identical integers given; no swap to make.')
 
         new_state = game.copy()
         new_player = self.copy()

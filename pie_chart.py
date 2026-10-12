@@ -35,8 +35,7 @@ def assign_colors(categories):
 
 def compute_segments(data):
     total = sum(data.values())
-    if total <= 0:
-        raise ValueError('Total of values must be greater than zero.')
+    if total <= 0: raise ValueError('Total of values must be greater than zero.')
 
     segments = []
     current_angle = 0.0
@@ -55,8 +54,7 @@ def angle_at_point(x, y):
 def category_for_angle(angle, segments):
     if not segments: raise ValueError('No segments by which to assign category')
     for cat, start, end in segments:
-        if start <= angle < end:
-            return cat
+        if start <= angle < end: return cat
 
 #given data, a dictionary of categories to obeservances,
 #draw a pie chart of the given height
@@ -64,8 +62,7 @@ def category_for_angle(angle, segments):
 def generate_pie_chart(title, data, height, use_color=False):
 
     width = int(round(height * CHAR_HEIGHT_TO_WIDTH_RATIO))
-    if width < 3 or height < 3:
-        raise ValueError('Width and height must be at least 3.')
+    if width < 3 or height < 3: raise ValueError('Width and height must be at least 3.')
 
     categories = list(data.keys())
     symbols = assign_symbols(categories)
@@ -96,8 +93,7 @@ def generate_pie_chart(title, data, height, use_color=False):
                 ch = symbols[cat]
                 if use_color: ch = f'{colors[cat]}{ch}{Style.RESET_ALL}'
                 row_chars.append(ch)
-            else:
-                row_chars.append(' ')
+            else: row_chars.append(' ')
         rows.append(''.join(row_chars))
 
     # Build legend

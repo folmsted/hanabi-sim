@@ -24,8 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--deterministic', action='store_true',
                         help='seed the RNG so randomized output is reproducible')
     args = parser.parse_args()
-    if args.deterministic:
-        random.seed(DETERMINISTIC_SEED)
+    if args.deterministic: random.seed(DETERMINISTIC_SEED)
     outfile_name, outfile = (args.outfile, None) if args.outfile else (None, None)
     infile_name,  infile  = (args.infile,  None) if args.infile  else (None, None)
     verbose = args.verbose
@@ -38,8 +37,7 @@ if __name__ == '__main__':
         except OSError:
             if infile: del infile
             print(f'Error reading infile; {infile_name}; infile use aborted.')
-    if outfile_name:
-        outfile = open(outfile_name, 'w')
+    if outfile_name: outfile = open(outfile_name, 'w')
 
     color_picker = prompt_generator
     try: rules = util.get_rules(setup_choices, outfile, color_picker)
@@ -57,16 +55,14 @@ if __name__ == '__main__':
     while (True):
         prompt = f'Ask for information with "?" or make a play '\
                  f'(player up: {game.get_player(game.player_up).name}):'
-        if game.over:
-            prompt = 'The last play would have caused the end of the game; undo (N/y)?'
+        if game.over: prompt = 'The last play would have caused the end of the game; undo (N/y)?'
         try:
             choice = setup_choices.pop(0).strip() if setup_choices else \
                      input(style_text(next(color_picker), prompt))
         except (KeyboardInterrupt, EOFError):
             print('\nProgram terminated by user.')
             exit(0)
-        if outfile:
-            outfile.write(choice + '\n')
+        if outfile: outfile.write(choice + '\n')
         choice = util.trim_comment(choice, util.COMMENT_START).split()
         match choice:
             #if the game was ended by the last turn taken, give a chance to back out
@@ -104,8 +100,7 @@ if __name__ == '__main__':
                 game, text = ih.handle_guess(options, game, verbose=verbose)
                 print(text)
             case ['undo', *options] | ['u', *options]:
-                if options:
-                    text = f'Unrecognized options: {", ".join(options)}'
+                if options: text = f'Unrecognized options: {", ".join(options)}'
                 else:
                     text = f'Reverting to prior state; round: {game.previous_state.round}, '\
                     f'player up: {game.previous_state.players[game.previous_state.player_up].name}'\
@@ -116,16 +111,14 @@ if __name__ == '__main__':
                 game, text = ih.handle_swap(options, game, verbose=verbose)
                 print(text)
             case ['quit', *options] | ['q', *options]:
-                if options:
-                    text = f'Unrecognized options: {", ".join(options)}'
+                if options: text = f'Unrecognized options: {", ".join(options)}'
                 else:
                     text = 'Quitting game'
                     game.over = True
                     break
                 print(text)
 
-    if outfile:
-        outfile.close()
+    if outfile: outfile.close()
     print('Game is over')
     choice = ''
     while (True):
@@ -138,12 +131,8 @@ if __name__ == '__main__':
             exit(0)
 
         choice = choice.split()
-        if (not choice):
-            continue
-        if (choice[0] == 'help' or choice[0] == '?'):
-            print(ih.handle_help(choice[1:]))
-        if (choice[0] == 'show' or choice[0] == 's'):
-            print(ih.handle_show(choice[1:], game))
-        if (choice[0] == 'quit' or choice[0] == 'q'):
-            break
+        if (not choice): continue
+        if (choice[0] == 'help' or choice[0] == '?'): print(ih.handle_help(choice[1:]))
+        if (choice[0] == 'show' or choice[0] == 's'): print(ih.handle_show(choice[1:], game))
+        if (choice[0] == 'quit' or choice[0] == 'q'): break
 

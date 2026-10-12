@@ -23,8 +23,7 @@ class Card:
         return style_text(self.color, f'{self.color.name} {self.number}')
 
     def __eq__(self, other):
-        if not isinstance(other, Card):
-            return False
+        if not isinstance(other, Card): return False
         return self.color == other.color and self.number == other.number
 
     def __lt__(self, other):

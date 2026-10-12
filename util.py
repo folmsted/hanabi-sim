@@ -121,8 +121,7 @@ def get_players(setup_choices, outfile, color_picker):
         if (not playername and len(players) < GameState.MIN_PLAYERS):
             print(f'The game needs at least {GameState.MIN_PLAYERS} players!')
             continue
-        if (not playername):
-            return players, protocols
+        if (not playername): return players, protocols
 
         #second, query for a replenishment protocol
         invalid = True
@@ -131,8 +130,7 @@ def get_players(setup_choices, outfile, color_picker):
                        input(style_text(next(color_picker),\
                            f'Enter the replenishment protocol (in place|left shift|right shift)'\
                            f' for player {len(players) + 1} {playername} ("?" for help):'))
-            if outfile:
-                outfile.write(protocol + '\n')
+            if outfile: outfile.write(protocol + '\n')
             protocol = trim_comment(protocol).strip()
             if protocol == '?':
                 print(
@@ -155,8 +153,7 @@ def get_players(setup_choices, outfile, color_picker):
                 protocols.append(PROTOCOL_MAP[protocol.lower()])
                 players.append(playername)
                 invalid = False
-            except KeyError:
-                pass
+            except KeyError: pass
         if len(players) == GameState.MAX_PLAYERS:
             print('The maximum number of players has been reached!')
             done = True
@@ -178,10 +175,8 @@ def read_card(s):
             c = get_color_from_str(s[:-1])
         except (ValueError, HanabiInputException):
             raise HanabiInputException(f'You must specify a number and color; your input: {s}')
-    if not (1 <= n <= 5):
-        raise HanabiInputException(f'Illegal number ({n}) given.')
-    if not isinstance(c, Color):
-        raise HanabiInputException(f'Illegal color ({c}) given.')
+    if not (1 <= n <= 5): raise HanabiInputException(f'Illegal number ({n}) given.')
+    if not isinstance(c, Color): raise HanabiInputException(f'Illegal color ({c}) given.')
     return Card(c, n)
 
 def read_color_or_number(user_input):
@@ -193,8 +188,7 @@ def read_color_or_number(user_input):
         ret = int(user_input)
         if not 1 <= ret <= 5: raise ValueError
     except ValueError:
-        try:
-            ret = get_color_from_str(user_input)
+        try: ret = get_color_from_str(user_input)
         except HanabiInputException:
             raise HanabiInputException(
                 f'Invalid value; expected number or color; yours: {user_input}'

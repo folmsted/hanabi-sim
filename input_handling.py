@@ -74,8 +74,7 @@ def handle_show(choice, game):
             except HanabiInputException as e: return e.args[0]
             try: position = int(position)
             except ValueError: return f'Expected an integer card position; yours: {position}.'
-            if not 1 <= position <= len(player.hand):
-                return f'Position {position} is out of range'
+            if not 1 <= position <= len(player.hand): return f'Position {position} is out of range'
             text = f'{player.name} card {position}:\n{player.represent_card(position - 1)}'
         case ['card', *args] | ['c', *args]:
             text = 'Additional input required for card histroy; see "help show"'
@@ -204,14 +203,12 @@ def handle_show(choice, game):
                     #filter out hints not from (to) the requested player
                     if args[1] in {'from', '<'}:
                         actions = [md for md in actions if md.player == player_idx]
-                    else:
-                        actions = [md for md in actions if target(md) == player_idx]
+                    else: actions = [md for md in actions if target(md) == player_idx]
                     #TODO add options to make charts of other facts than just hint giver/receiver
                     #get just the name of the hint giver (receiver)
                     if args[1] in {'to', '>'}:
                         actions = [game.players[md.player].name for md in actions]
-                    else:
-                        actions = [game.players[target(md)].name for md in actions]
+                    else: actions = [game.players[target(md)].name for md in actions]
                     #don't put the target player in the chart; he can't hint himself
                     #but do put other players in even if they haven't hinted the target
                     #(or been hinted by the target)
@@ -295,7 +292,8 @@ def handle_hint(choice, game, verbose=False):
         #player given by turn order
         target_player = int(choice[0]) #the player receiving the hint
         if target_player < 1 or target_player > game.num_players:
-            return game, f'Could not find a player {target_player}; total players: {game.num_players}'
+            return game, (f'Could not find a player {target_player}; '
+                          f'total players: {game.num_players}')
         target_player = target_player - 1
     except ValueError:
         #player given by name
@@ -313,12 +311,9 @@ def handle_hint(choice, game, verbose=False):
     except ValueError:
         return game, f'Your indicated positions {", ".join(positions)} were not all integers.'
     #do the hint
-    try:
-        new_state = player.perform_hint(target_player, positions, hint, game, verbose=verbose)
-    except HanabiIndexException as e:
-        return game, f'Position {e.index + 1}: {e.args[0]}'
-    except HanabiException as e:
-        return game, e.args[0]
+    try: new_state = player.perform_hint(target_player, positions, hint, game, verbose=verbose)
+    except HanabiIndexException as e: return game, f'Position {e.index + 1}: {e.args[0]}'
+    except HanabiException as e: return game, e.args[0]
     return new_state, 'Success; advancing turn'
 
 #The logic for the "discard" command
@@ -335,12 +330,9 @@ def handle_discard(choice, game, verbose=False):
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
     player = game.get_player(game.player_up)
-    try:
-        new_state = player.perform_discard(position - 1, card, game, verbose=verbose)
-    except HanabiIndexException as e:
-        return game, f'Card {e.index + 1}: {e.args[0]}'
-    except HanabiException as e:
-        return game, e.args[0]
+    try: new_state = player.perform_discard(position - 1, card, game, verbose=verbose)
+    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
+    except HanabiException as e: return game, e.args[0]
     return new_state, 'Success; advancing turn'
 
 #The logic for the "guess" command
@@ -380,10 +372,8 @@ def handle_swap(choice, game, verbose=False):
     try: index1, index2 = int(index1), int(index2)
     except ValueError: return game, f'Integers expected as indices; yours: {index1, index2}'
     try: new_state = player.perform_swap(index1 - 1, index2 - 1, game, verbose=verbose)
-    except HanabiIndexException as e:
-        return game, f'Card {e.index + 1}: {e.args[0]}'
-    except HanabiException as e:
-        return game, e.args[0]
+    except HanabiIndexException as e: return game, f'Card {e.index + 1}: {e.args[0]}'
+    except HanabiException as e: return game, e.args[0]
     return new_state, 'Success'
 
 

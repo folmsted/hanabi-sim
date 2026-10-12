@@ -28,8 +28,9 @@ class Hand:
                 if hint == Color.MULTICOLOR and not rules['rainbow_enabled']:
                     raise HanabiSimException(f'This game does not have {Color.MULTICOLOR} cards.')
                 try: 
-                    new_hand.hand[i] = card.hint_color_positive(hint, r, t, rules) if i in positions \
-                                       else card.hint_color_negative(hint, r, t, rules)
+                    new_hand.hand[i] = (card.hint_color_positive(hint, r, t, rules)
+                                        if i in positions
+                                        else card.hint_color_negative(hint, r, t, rules))
                 except HanabiSimException  as e: raise HanabiIndexException(i, *e.args)
                 except HanabiRulesException as e: raise e
             else:

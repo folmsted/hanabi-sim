@@ -67,7 +67,8 @@ class GameState:
     def represent_general(self):
         players = 'Players (in order): ' + ', '.join([p.name for p in self.players]) + '\n'
         fields = ['Round', 'Player Up', 'Hints', 'Misfires', 'Deck Size']
-        values = [self.round, self.players[self.player_up].name, self.hints, self.misfires, self.num_in_deck]
+        values = [self.round, self.players[self.player_up].name, self.hints, self.misfires,
+                  self.num_in_deck]
         if self.rules['game_end'] == 'final_round' and self.game_end_index is not None:
             fields.append('Final Player')
             values.append(self.get_player(self.game_end_index).name)
@@ -138,8 +139,7 @@ class GameState:
         elif isinstance(specifier, str):
             s = set()
             for p in self.players:
-                if p.name.lower().startswith(specifier.lower()):
-                    s.add(p)
+                if p.name.lower().startswith(specifier.lower()): s.add(p)
             if (len(s) == 1): return s.pop()
             else:
                 #sort by turn order so the message is deterministic
@@ -165,8 +165,7 @@ class GameState:
 
         #check if we have enough rainbows to cover if rainbows wild; dict is empty if not wild
         for val, count in demanded_rainbow_cards.items():
-            if not self.outstanding_cards.contains(Card(Color.MULTICOLOR, val), count):
-                return False
+            if not self.outstanding_cards.contains(Card(Color.MULTICOLOR, val), count): return False
         return True
                 
  
