@@ -17,17 +17,8 @@ HELP_TEXT = \
 #Help text for commands which are not yet command objects; consulted until
 #those commands are converted in a later commit.
 _PENDING_HELP = {
-    'play': help_text.help_play,
-    'p': help_text.help_play,
-    'hint': help_text.help_hint,
-    'h': help_text.help_hint,
-    'discard': help_text.help_discard,
-    'd': help_text.help_discard,
-    'guess': help_text.help_guess,
-    'g': help_text.help_guess,
     'undo': help_text.help_undo,
     'u': help_text.help_undo,
-    'swap': help_text.help_swap,
     'quit': help_text.help_quit,
     'q': help_text.help_quit,
 }

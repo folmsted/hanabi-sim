@@ -87,20 +87,31 @@ def main(argv=None):
             case ['show', *options] | ['s', *options]:
                 print(ih.SHOW.handle(options, game).text)
             case ['play', *options] | ['p', *options]:
-                try: game, text = ih.handle_play(options, game, verbose=verbose)
+                try:
+                    result = ih.PLAY.handle(options, game, verbose=verbose)
                 except HanabiUserInputRequiredException as e:
-                    game, text = ih.handle_wild_play(
-                        e.args, game, setup_choices, outfile, color_picker, verbose=verbose
-                    )
+                    print(e.args[3])
+                    try:
+                        choice = setup_choices.pop(0).strip() if setup_choices else \
+                            input(style_text(next(color_picker), ih.WILD_PLAY.prompt))
+                    except (KeyboardInterrupt, EOFError):
+                        print('Program terminated by user.')
+                        exit(0)
+                    if outfile: outfile.write(choice + '\n')
+                    result = ih.WILD_PLAY.handle(e.args, choice, game, verbose=verbose)
+                game, text = result.game, result.text
                 print(text)
             case ['hint', *options] | ['h', *options]:
-                game, text = ih.handle_hint(options, game, verbose=verbose)
+                result = ih.HINT.handle(options, game, verbose=verbose)
+                game, text = result.game, result.text
                 print(text)
             case ['discard', *options] | ['d', *options]:
-                game, text = ih.handle_discard(options, game, verbose=verbose)
+                result = ih.DISCARD.handle(options, game, verbose=verbose)
+                game, text = result.game, result.text
                 print(text)
             case ['guess', *options] | ['g', *options]:
-                game, text = ih.handle_guess(options, game, verbose=verbose)
+                result = ih.GUESS.handle(options, game, verbose=verbose)
+                game, text = result.game, result.text
                 print(text)
             case ['undo', *options] | ['u', *options]:
                 if options: text = f'Unrecognized options: {", ".join(options)}'
@@ -111,7 +122,8 @@ def main(argv=None):
                     game = game.previous_state if game.previous_state else game
                 print(text)
             case ['swap', *options]:
-                game, text = ih.handle_swap(options, game, verbose=verbose)
+                result = ih.SWAP.handle(options, game, verbose=verbose)
+                game, text = result.game, result.text
                 print(text)
             case ['quit', *options] | ['q', *options]:
                 if options: text = f'Unrecognized options: {", ".join(options)}'

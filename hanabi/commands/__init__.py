@@ -2,17 +2,26 @@ from hanabi.commands.base import Command, CommandResult
 from hanabi.commands.about import AboutCommand
 from hanabi.commands.help import HelpCommand
 from hanabi.commands.show import ShowCommand
-from hanabi.commands._legacy import (
-    handle_play, handle_wild_play, handle_hint,
-    handle_discard, handle_guess, handle_swap,
-)
+from hanabi.commands.play import PlayCommand, WildPlayCommand
+from hanabi.commands.hint import HintCommand
+from hanabi.commands.discard import DiscardCommand
+from hanabi.commands.guess import GuessCommand
+from hanabi.commands.swap import SwapCommand
 
 
 ABOUT = AboutCommand()
 HELP = HelpCommand()
 SHOW = ShowCommand()
+PLAY = PlayCommand()
+HINT = HintCommand()
+DISCARD = DiscardCommand()
+GUESS = GuessCommand()
+SWAP = SwapCommand()
 
-COMMANDS = (ABOUT, HELP, SHOW)
+#The internal follow-up to a "play" that needs a color chosen; not in COMMANDS.
+WILD_PLAY = WildPlayCommand()
+
+COMMANDS = (ABOUT, HELP, SHOW, PLAY, HINT, DISCARD, GUESS, SWAP)
 
 
 def find(token):
