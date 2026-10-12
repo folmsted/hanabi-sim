@@ -60,12 +60,16 @@ def main(argv=None):
         raise RuntimeError(f'Unhandled game initialization error: {e.args[0]}') from e
 
     while (True):
-        prompt = f'Ask for information with "?" or make a play '\
-                 f'(player up: {game.get_player(game.player_up).name}):'
+        prompt = (
+            f'Ask for information with "?" or make a play '
+            f'(player up: {game.get_player(game.player_up).name}):'
+        )
         if game.over: prompt = 'The last play would have caused the end of the game; undo (N/y)?'
         try:
-            choice = setup_choices.pop(0).strip() if setup_choices else \
-                     input(style_text(next(color_picker), prompt))
+            choice = (
+                setup_choices.pop(0).strip() if setup_choices
+                else input(style_text(next(color_picker), prompt))
+            )
         except (KeyboardInterrupt, EOFError):
             print('\nProgram terminated by user.')
             return 0
@@ -74,9 +78,11 @@ def main(argv=None):
         match choice:
             #if the game was ended by the last turn taken, give a chance to back out
             case ['y'] | ['Y'] if game.over:
-                text = f'Reverting to prior state; round: {game.previous_state.round}, '\
-                f'player up: {game.previous_state.players[game.previous_state.player_up].name}'\
-                if game.previous_state else 'Cannot revert; no previous state to revert to'
+                text = (
+                    f'Reverting to prior state; round: {game.previous_state.round}, '
+                    f'player up: {game.previous_state.players[game.previous_state.player_up].name}'
+                    if game.previous_state else 'Cannot revert; no previous state to revert to'
+                )
                 game = game.previous_state if game.previous_state else game
                 print(text)
             case _ if game.over:
@@ -96,8 +102,10 @@ def main(argv=None):
                 except HanabiUserInputRequiredException as e:
                     print(e.args[3])
                     try:
-                        choice = setup_choices.pop(0).strip() if setup_choices else \
-                            input(style_text(next(color_picker), WILD_PLAY.prompt))
+                        choice = (
+                            setup_choices.pop(0).strip() if setup_choices
+                            else input(style_text(next(color_picker), WILD_PLAY.prompt))
+                        )
                     except (KeyboardInterrupt, EOFError):
                         print('Program terminated by user.')
                         exit(0)

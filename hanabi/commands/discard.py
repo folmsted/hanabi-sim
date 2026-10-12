@@ -6,20 +6,21 @@ from hanabi.game_objects.exceptions import (
 )
 
 
-DISCARD_TEXT = \
-    'The "discard" command, short form "d".  Used to '\
-    'indicate that turn player should discard a card.\n'\
-    'Usage:\n'\
-    'discard <position> <card>\n'\
-    'This causes the turn player to discard his card '\
-    'in position <position> of his hand.\n'\
-    '---> <card> is a value which indicates what value the card had on being revealed.\n'\
-    '---> <card> is formatted as <color><number> or '\
-    '<number><color>; abbreviations allowed.\n'\
-    'Examples:\n'\
-    'discard 1 1y (player discards card in position 1, which was a yellow 1)\n'\
-    'discard 5 3green (player discards card in position 3, which was a green 3)\n'\
+DISCARD_TEXT = (
+    'The "discard" command, short form "d".  Used to '
+    'indicate that turn player should discard a card.\n'
+    'Usage:\n'
+    'discard <position> <card>\n'
+    'This causes the turn player to discard his card '
+    'in position <position> of his hand.\n'
+    '---> <card> is a value which indicates what value the card had on being revealed.\n'
+    '---> <card> is formatted as <color><number> or '
+    '<number><color>; abbreviations allowed.\n'
+    'Examples:\n'
+    'discard 1 1y (player discards card in position 1, which was a yellow 1)\n'
+    'discard 5 3green (player discards card in position 3, which was a green 3)\n'
     'discard 2 r1 (player discards card in position 2, which was a red 1)'
+)
 
 #The logic for the "discard" command
 def discard_text(choice, game, verbose=False):

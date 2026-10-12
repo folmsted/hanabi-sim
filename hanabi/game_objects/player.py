@@ -28,15 +28,21 @@ class Player:
         if (game.hints >= game.MAX_HINTS):
             raise HanabiRulesException('Cannot discard while hints are at maximum!')
         if (not 0 <= position < len(self.hand)):
-            errstr = 'the position given was not in range.\n'\
-                     f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
+            errstr = (
+                'the position given was not in range.\n'
+                f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
+            )
             raise HanabiIndexException(position, errstr)
         if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
             raise HanabiSimException(f'This game has no {Color.MULTICOLOR} cards.')
-        if card.color  not in self.hand[position].colors or\
-           card.number not in self.hand[position].numbers:
-            errstr = f'The card identity {card} which you gave was not possible '\
-                     f'given its possible states.\nThe card:\n{str(self.hand[position])}'
+        if (
+            card.color  not in self.hand[position].colors
+            or card.number not in self.hand[position].numbers
+        ):
+            errstr = (
+                f'The card identity {card} which you gave was not possible '
+                f'given its possible states.\nThe card:\n{str(self.hand[position])}'
+            )
             raise HanabiIndexException(position, errstr)
         new_state = game.copy()
         new_state.hints += 1
@@ -45,8 +51,10 @@ class Player:
         new_state.turns_taken.append(DiscardAction(RealizedCard(card, self.hand[position])))
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         except ValueError:
-            errstr = f'The card you specified, {card}, is exhausted '\
-                     f'by prior plays and discards. (see "show outstanding")'
+            errstr = (
+                f'The card you specified, {card}, is exhausted '
+                f'by prior plays and discards. (see "show outstanding")'
+            )
             raise HanabiSimException(errstr)
         #Replenishment
         new_player = self.copy()
@@ -68,21 +76,29 @@ class Player:
         and the hand of the player performing the discard.
         """
         if (not 0 <= position < len(self.hand)):
-            errstr = 'the position you specified was not in range.\n'\
-                     f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
+            errstr = (
+                'the position you specified was not in range.\n'
+                f'Expected an integer between 1 and {len(self.hand)}, inclusive.'
+            )
             raise HanabiIndexException(position, errstr)
         if card.color == Color.MULTICOLOR and not game.rules['rainbow_enabled']:
             raise HanabiSimException(f'This game has no {Color.MULTICOLOR} cards.')
-        if card.color not in self.hand[position].colors or \
-           card.number not in self.hand[position].numbers:
-            errstr = f'The card identity {card} which you gave was not possible '\
-                     f'given its possible states.\nThe card:\n{str(self.hand[position])}'
+        if (
+            card.color not in self.hand[position].colors
+            or card.number not in self.hand[position].numbers
+        ):
+            errstr = (
+                f'The card identity {card} which you gave was not possible '
+                f'given its possible states.\nThe card:\n{str(self.hand[position])}'
+            )
             raise HanabiIndexException(position, errstr)
         new_state = game.copy()
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         except ValueError:
-            errstr = f'The card you specified, {card}, is exhausted '\
-                     f'by prior plays and discards.  See "show outstanding".' 
+            errstr = (
+                f'The card you specified, {card}, is exhausted '
+                f'by prior plays and discards.  See "show outstanding".'
+            )
             raise HanabiSimException(errstr)
 
         #user must choose which suit wild rainbow will count as, if any is possible
@@ -174,8 +190,10 @@ class Player:
         if not positions: raise HanabiSimException(f'You must specify the positions hinted.')
         for position in positions:
             if not 0 <= position < len(target_player.hand):
-                errstr = f'no such card; position out of range.\n' \
-                         f'Expected integer between 1 and {len(target_player.hand)}, inclusive.'
+                errstr = (
+                    f'no such card; position out of range.\n'
+                    f'Expected integer between 1 and {len(target_player.hand)}, inclusive.'
+                )
                 raise HanabiIndexException(position, errstr)
         if len(positions) != len(set(positions)):
             raise HanabiSimException('Duplicate positions specified.')
@@ -226,12 +244,16 @@ class Player:
         if not isinstance(pos1, int) or not isinstance(pos2, int):
             raise ValueError(f'integers expected; got {pos1, pos2}')
         if not (0 <= pos1 < len(self.hand)):
-            errstr = f'nonnegative integers not exceeding hand size '\
-                     f'expected; hand size: {len(self.hand)}.'
+            errstr = (
+                f'nonnegative integers not exceeding hand size '
+                f'expected; hand size: {len(self.hand)}.'
+            )
             raise HanabiIndexException(pos1, errstr)
         if not (0 <= pos2 < len(self.hand)):
-            errstr = f'nonnegative integers not exceeding hand size '\
-                     f'expected; hand size: {len(self.hand)}.'
+            errstr = (
+                f'nonnegative integers not exceeding hand size '
+                f'expected; hand size: {len(self.hand)}.'
+            )
             raise HanabiIndexException(pos2, errstr)
         if pos1 == pos2: raise HanabiSimException(f'Identical integers given; no swap to make.')
 

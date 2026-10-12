@@ -7,60 +7,63 @@ from hanabi.game_objects.actions import HintAction, DiscardAction, PlayAction, M
 from hanabi.game_objects.exceptions import HanabiInputException, HanabiSimException
 
 
-SHOW_TEXT = \
-    'The "show" command, short form "s".  Used to print information.\n'\
-    'Usages:\n'\
-    'show outstanding|o (to print all outstanding cards)\n'\
-    'show state|s (to show some general game state)\n'\
-    'show play|p (to show which cards have been played successfully)\n'\
-    'show discard|d (to show which cards are out of play)\n'\
-    'show rules|r (to show the current ruleset being used)\n'\
-    'show hand|h [player] (to show the hand of [player])\n'\
-    '---> [player] can be a number indicating turn order or a\n'\
-    '     string which unambiguously identifies the player (defaults to player up).\n'\
-    '---> Output displays for each card the round drawn (RD), possible colors,\n'\
-    '     round (RU) and turn (TU) last updated, and possible numbers.\n'\
-    'show card|c <player> <position> (to show information about a card in <player>\'s hand)\n'\
-    'This shows the history of all past states the card has had, and when.\n'\
-    '---> <player> can be a number indicating turn order or a\n'\
-    '     string which unambiguously identifies the player.\n'\
-    'show info|i <option> [sort] (to show statistics about the game so far)\n'\
-    '---> For detailed information on show info, use "help show info".\n'\
-    'show graph|g <options> (to graph information about the game so far)\n'\
+SHOW_TEXT = (
+    'The "show" command, short form "s".  Used to print information.\n'
+    'Usages:\n'
+    'show outstanding|o (to print all outstanding cards)\n'
+    'show state|s (to show some general game state)\n'
+    'show play|p (to show which cards have been played successfully)\n'
+    'show discard|d (to show which cards are out of play)\n'
+    'show rules|r (to show the current ruleset being used)\n'
+    'show hand|h [player] (to show the hand of [player])\n'
+    '---> [player] can be a number indicating turn order or a\n'
+    '     string which unambiguously identifies the player (defaults to player up).\n'
+    '---> Output displays for each card the round drawn (RD), possible colors,\n'
+    '     round (RU) and turn (TU) last updated, and possible numbers.\n'
+    'show card|c <player> <position> (to show information about a card in <player>\'s hand)\n'
+    'This shows the history of all past states the card has had, and when.\n'
+    '---> <player> can be a number indicating turn order or a\n'
+    '     string which unambiguously identifies the player.\n'
+    'show info|i <option> [sort] (to show statistics about the game so far)\n'
+    '---> For detailed information on show info, use "help show info".\n'
+    'show graph|g <options> (to graph information about the game so far)\n'
     '---> For detailed information on show graph, use "help show graph".'
+)
 
-SHOW_INFO_TEXT = \
-    'The "show" command\'s "info" option.  Used to show statistics about the game so far.\n'\
-    'Usage:\n'\
-    'show info|i <option> [sort]\n'\
-    '---> <option> can be a player or a type of information to be printed.\n'\
-    '     If player, must be number or string which unambiguously identifies a player.\n'\
-    '     Else, is an option:\n'\
-    '     play|p for plays; discard|d for discards; misfire|m for misfires; hint|h for hints\n'\
-    '---> [sort] specifies which information to sort by.\n'\
-    '     sort options for plays, discards, and misfires:\n'\
-    '         round|r for round performed (default);\n'\
-    '         player|p for player performing action;\n'\
-    '         card|c for card acted upon.\n'\
-    '     sort options for hint:\n'\
-    '         round|r for round performed (default);\n'\
-    '         giver|g for giver of hint;\n'\
-    '         target|t for recipient of hint;\n'\
-    '         number|n for number of positions hinted;\n'\
-    '         hint|h for hint given (color or number).\n'\
-    '     sort options for players:\n'\
-    '         round|r for round performed (default);\n'\
+SHOW_INFO_TEXT = (
+    'The "show" command\'s "info" option.  Used to show statistics about the game so far.\n'
+    'Usage:\n'
+    'show info|i <option> [sort]\n'
+    '---> <option> can be a player or a type of information to be printed.\n'
+    '     If player, must be number or string which unambiguously identifies a player.\n'
+    '     Else, is an option:\n'
+    '     play|p for plays; discard|d for discards; misfire|m for misfires; hint|h for hints\n'
+    '---> [sort] specifies which information to sort by.\n'
+    '     sort options for plays, discards, and misfires:\n'
+    '         round|r for round performed (default);\n'
+    '         player|p for player performing action;\n'
+    '         card|c for card acted upon.\n'
+    '     sort options for hint:\n'
+    '         round|r for round performed (default);\n'
+    '         giver|g for giver of hint;\n'
+    '         target|t for recipient of hint;\n'
+    '         number|n for number of positions hinted;\n'
+    '         hint|h for hint given (color or number).\n'
+    '     sort options for players:\n'
+    '         round|r for round performed (default);\n'
     '         action|a for action taken.'
+)
 
-SHOW_GRAPH_TEXT = \
-    'The "show" command\'s "graph" option.  Used to graph statistics about the game so far.\n'\
-    'Usage:\n'\
-    'show graph|g <options>\n'\
-    '---> <options> can be one of {play|p, discard|d, misfire|m, hint|h} to print\n'\
-    '     a graph of percentages of plays/discards/misfires/hints performed by each player.\n'\
-    '---> If using the hint option, one can use additional arguments:\n'\
-    '         to|> <player> to graph percentages of hints to <player>, by giver;\n'\
+SHOW_GRAPH_TEXT = (
+    'The "show" command\'s "graph" option.  Used to graph statistics about the game so far.\n'
+    'Usage:\n'
+    'show graph|g <options>\n'
+    '---> <options> can be one of {play|p, discard|d, misfire|m, hint|h} to print\n'
+    '     a graph of percentages of plays/discards/misfires/hints performed by each player.\n'
+    '---> If using the hint option, one can use additional arguments:\n'
+    '         to|> <player> to graph percentages of hints to <player>, by giver;\n'
     '         from|< <player> to graph percentages of hints from <player>, by destination.'
+)
 
 
 #The logic for the "show" command
@@ -178,14 +181,18 @@ def show_text(choice, game):
         case ['graph', *args] | ['g', *args]:
             match args:
                 #TODO handle options or resolve not to use options
-                case ['play', *options]    | ['p', *options] | \
-                     ['discard', *options] | ['d', *options] | \
-                     ['misfire', *options] | ['m', *options] | \
-                     ['hint', *options] | ['h', *options] if not options:
-                    st, tp = ('Play', PlayAction) if args[0] in {'play', 'p'} else          \
-                             ('Discard', DiscardAction) if args[0] in {'discard', 'd'} else \
-                             ('Misfire', MisfireAction) if args[0] in {'misfire', 'm'} else \
-                             ('Hint', HintAction) if args[0] in {'hint', 'h'} else '?????'
+                case (
+                    ['play', *options] | ['p', *options]
+                    | ['discard', *options] | ['d', *options]
+                    | ['misfire', *options] | ['m', *options]
+                    | ['hint', *options] | ['h', *options]
+                ) if not options:
+                    st, tp = (
+                        ('Play', PlayAction) if args[0] in {'play', 'p'}
+                        else ('Discard', DiscardAction) if args[0] in {'discard', 'd'}
+                        else ('Misfire', MisfireAction) if args[0] in {'misfire', 'm'}
+                        else ('Hint', HintAction) if args[0] in {'hint', 'h'} else '?????'
+                    )
                     actions = game.get_actions_of_type(tp)
                     action_takers = [game.players[md.player].name for md in actions]
                     #Generate map from names to times taking PlayAction
@@ -197,10 +204,12 @@ def show_text(choice, game):
                     text = pie_chart.generate_pie_chart(
                         title, data, pie_chart.DEFAULT_CHART_HEIGHT, True
                     )
-                case ['hint', 'to',   player] | ['h', 'to',   player] | \
-                     ['hint', '>',    player] | ['h', '>',    player] | \
-                     ['hint', 'from', player] | ['h', 'from', player] | \
-                     ['hint', '<',    player] | ['h', '<',    player] :
+                case (
+                    ['hint', 'to',   player] | ['h', 'to',   player]
+                    | ['hint', '>',    player] | ['h', '>',    player]
+                    | ['hint', 'from', player] | ['h', 'from', player]
+                    | ['hint', '<',    player] | ['h', '<',    player]
+                ):
                     actions = game.get_actions_of_type(HintAction)
                     try: player_idx = game.get_player_index(player)
                     except HanabiInputException as e: return e.args[0]

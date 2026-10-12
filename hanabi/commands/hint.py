@@ -6,24 +6,25 @@ from hanabi.game_objects.exceptions import (
 )
 
 
-HINT_TEXT = \
-    'The "hint" command, short form "h".  Used to indicate\n'\
-    'that the turn player should give a hint to another player.\n'\
-    'Usage:\n'\
-    'hint <player> <positions> <hint>\n'\
-    'This causes the hand of <player> to be updated '\
-    'according to the <hint> for <positions>.\n'\
-    '---> <player> can be a number indicating turn order or a\n'\
-    '     string which unambiguously identifies the player by name.\n'\
-    '---> <positions> is a space-separated list of numbers\n'\
-    '     indicating the positions at which to apply the <hint>.\n'\
-    '---> <hint> is a number or a string (not both) representing\n'\
-    '     the color or number being indicated.\n'\
-    'Examples:\n'\
-    'hint 1 1 3 4 r (player 1 has red cards at positions 1, 3, 4)\n'\
-    'hint fra 2 5 (the player whose name starts "fra" has a 5 at position 2)\n'\
-    'hint janos 1 2 3 red (player janos has red cards at positions 1, 2, 3)\n'\
+HINT_TEXT = (
+    'The "hint" command, short form "h".  Used to indicate\n'
+    'that the turn player should give a hint to another player.\n'
+    'Usage:\n'
+    'hint <player> <positions> <hint>\n'
+    'This causes the hand of <player> to be updated '
+    'according to the <hint> for <positions>.\n'
+    '---> <player> can be a number indicating turn order or a\n'
+    '     string which unambiguously identifies the player by name.\n'
+    '---> <positions> is a space-separated list of numbers\n'
+    '     indicating the positions at which to apply the <hint>.\n'
+    '---> <hint> is a number or a string (not both) representing\n'
+    '     the color or number being indicated.\n'
+    'Examples:\n'
+    'hint 1 1 3 4 r (player 1 has red cards at positions 1, 3, 4)\n'
+    'hint fra 2 5 (the player whose name starts "fra" has a 5 at position 2)\n'
+    'hint janos 1 2 3 red (player janos has red cards at positions 1, 2, 3)\n'
     'hint 2 4 5 2 (player 2 has a two card at positions 4, 5)'
+)
 
 #The logic for the "hint" command
 def hint_text(choice, game, verbose=False):

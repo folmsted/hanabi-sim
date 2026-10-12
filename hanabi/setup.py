@@ -42,14 +42,15 @@ def get_rules(setup_choices, outfile, color_picker):
         rule = trim_comment(rule, COMMENT_START).strip().split()
         match rule:
             case ['?']:
-                helpstr = \
-                    'To print rules, use "print rules" or just \'p\' for short.\n'\
-                    'To comfirm current rules and continue, leave blank.\n'\
-                    'To change a rule, type the rule name or short '\
-                    'form and the new value to give it.\n'\
-                    'To explain what a rule does, type "explain <rulename|short form>".\n'\
-                    'For rules with only two possible values, giving '\
+                helpstr = (
+                    'To print rules, use "print rules" or just \'p\' for short.\n'
+                    'To comfirm current rules and continue, leave blank.\n'
+                    'To change a rule, type the rule name or short '
+                    'form and the new value to give it.\n'
+                    'To explain what a rule does, type "explain <rulename|short form>".\n'
+                    'For rules with only two possible values, giving '
                     'no value toggles between options.'
+                )
                 print(helpstr)
             case []:
                 done = True
@@ -115,18 +116,18 @@ def get_players(setup_choices, outfile, color_picker):
             protocol = trim_comment(protocol).strip()
             if protocol == '?':
                 print(
-                    'A player\'s replenishment protocol is how he replaces a card removed from '\
-                    'his hand.\n"in place" means the new card takes the place of the old one;\n'\
-                    '"left shift" means that all cards are shifted left as much as possible\n'\
-                    'and the new card is inserted at the rightmost position; and\n'\
-                    '"right shift" means that all cards are shifted right as much as possible,\n'\
-                    'and the new card is inserted at position 1, the leftmost position.\n'\
-                    'For example, if a player holding 5 cards played his position 3 card:\n'\
-                    'a left-shifter would move cards 4 and 5 to positions 3 and 4,\n'\
-                    'and the new card would go in position 5; and\n'\
-                    'a right-shifter would move cards 1 and 2 to positions 2 and 3,\n'\
-                    'and the new card would go in position 1; and\n'\
-                    'an in-place replacer would place the new card in position 3,\n'\
+                    'A player\'s replenishment protocol is how he replaces a card removed from '
+                    'his hand.\n"in place" means the new card takes the place of the old one;\n'
+                    '"left shift" means that all cards are shifted left as much as possible\n'
+                    'and the new card is inserted at the rightmost position; and\n'
+                    '"right shift" means that all cards are shifted right as much as possible,\n'
+                    'and the new card is inserted at position 1, the leftmost position.\n'
+                    'For example, if a player holding 5 cards played his position 3 card:\n'
+                    'a left-shifter would move cards 4 and 5 to positions 3 and 4,\n'
+                    'and the new card would go in position 5; and\n'
+                    'a right-shifter would move cards 1 and 2 to positions 2 and 3,\n'
+                    'and the new card would go in position 1; and\n'
+                    'an in-place replacer would place the new card in position 3,\n'
                     'and he would move no other cards.'
                 )
                 continue

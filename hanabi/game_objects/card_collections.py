@@ -39,8 +39,10 @@ class Hand:
                 except HanabiRulesException as e: raise e
             else:
                 try:
-                    new_hand.hand[i] = card.hint_number_positive(hint, r, t) if i in positions \
-                                  else card.hint_number_negative(hint, r, t)
+                    new_hand.hand[i] = (
+                        card.hint_number_positive(hint, r, t) if i in positions
+                        else card.hint_number_negative(hint, r, t)
+                    )
                 except HanabiSimException   as e: raise HanabiIndexException(i, *e.args)
                 except HanabiRulesException as e: raise e
         return new_hand

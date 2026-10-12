@@ -6,26 +6,27 @@ from hanabi.game_objects.exceptions import (
 )
 
 
-GUESS_TEXT = \
-    'The "guess" command, short form "g".  Used to '\
-    'guess the number or color or a card.\n'\
-    'Usage:\n'\
-    'guess <player> <position> <guess>\n'\
-    'This causes the card at <position> in the hand of <player> to be '\
-    'updated according to <guess>.\n'\
-    'Note that this does not advance play; it is just '\
-    'a way to keep track of thoughts.\n'\
-    '---> <player> can be a number indicating turn order or a\n'\
-    '     string which unambiguously identifies the player by name.\n'\
-    '---> <position> is a number indicating the position\n'\
-    '     at which to apply <guess>.\n'\
-    '---> <guess> is a number or a string (not both) '\
-    'representing the color or number being indicated.\n'\
-    'Examples:\n'\
-    'guess 1 4 g (player 1 guesses a green card is at position 4)\n'\
-    'guess jim 2 5 (the player whose name starts "jim" guesses a 5 is at position 2)\n'\
-    'guess janos 3 red (player janos guesses a red card is at position 3)\n'\
+GUESS_TEXT = (
+    'The "guess" command, short form "g".  Used to '
+    'guess the number or color or a card.\n'
+    'Usage:\n'
+    'guess <player> <position> <guess>\n'
+    'This causes the card at <position> in the hand of <player> to be '
+    'updated according to <guess>.\n'
+    'Note that this does not advance play; it is just '
+    'a way to keep track of thoughts.\n'
+    '---> <player> can be a number indicating turn order or a\n'
+    '     string which unambiguously identifies the player by name.\n'
+    '---> <position> is a number indicating the position\n'
+    '     at which to apply <guess>.\n'
+    '---> <guess> is a number or a string (not both) '
+    'representing the color or number being indicated.\n'
+    'Examples:\n'
+    'guess 1 4 g (player 1 guesses a green card is at position 4)\n'
+    'guess jim 2 5 (the player whose name starts "jim" guesses a 5 is at position 2)\n'
+    'guess janos 3 red (player janos guesses a red card is at position 3)\n'
     'guess 0 1 2 (player 0 guesses a 2 is at position 1)'
+)
 
 #The logic for the "guess" command
 def guess_text(choice, game, verbose=False):

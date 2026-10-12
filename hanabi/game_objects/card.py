@@ -29,26 +29,34 @@ class Card:
     def __lt__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * len(Color) + self.number < \
-               other.color.value * len(Color) + other.number
+        return (
+            self.color.value  * len(Color) + self.number
+            < other.color.value * len(Color) + other.number
+        )
 
     def __gt__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * len(Color) + self.number > \
-               other.color.value * len(Color) + other.number
+        return (
+            self.color.value  * len(Color) + self.number
+            > other.color.value * len(Color) + other.number
+        )
 
     def __le__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * len(Color) + self.number <= \
-               other.color.value * len(Color) + other.number
+        return (
+            self.color.value  * len(Color) + self.number
+            <= other.color.value * len(Color) + other.number
+        )
 
     def __ge__(self, other):
         if not isinstance(other, Card):
             raise ValueError(f'Cannot compare Card {self} and non-card {other}.')
-        return self.color.value  * len(Color) + self.number >= \
-               other.color.value * len(Color) + other.number
+        return (
+            self.color.value  * len(Color) + self.number
+            >= other.color.value * len(Color) + other.number
+        )
 
     def copy(self):
         return self
@@ -80,8 +88,8 @@ class UnknownCard:
                 raise HanabiRulesException(f'Cannot hint {Color.MULTICOLOR} in wild-hint mode.')
             if not (color in self.colors or Color.MULTICOLOR in self.colors):
                 raise HanabiSimException(
-                    f'Inconsistent hints: color {style_text(color, color.name)}'\
-                    f' is not possible for a hinted card.\nThe card:\n'\
+                    f'Inconsistent hints: color {style_text(color, color.name)}'
+                    f' is not possible for a hinted card.\nThe card:\n'
                     f'{str(self)}'
                 )
             if self.colors <= {color, Color.MULTICOLOR}: return self #nothing to do
@@ -94,8 +102,8 @@ class UnknownCard:
         #rules['rainbow_hint'] == 'suit'
         if (color not in self.colors):
             raise HanabiSimException(
-                f'Inconsistent hints: color {style_text(color, color.name)}'\
-                f' is not possible for a hinted card.\nThe card:\n'\
+                f'Inconsistent hints: color {style_text(color, color.name)}'
+                f' is not possible for a hinted card.\nThe card:\n'
                 f'{str(self)}'
             )
         if self.colors == {color}: return self #nothing to do
@@ -118,8 +126,8 @@ class UnknownCard:
             new_state.colors = new_state.colors - {color, Color.MULTICOLOR}
             if len(new_state.colors) == 0:
                 raise HanabiSimException(
-                    f'Inconsistent hints: color {style_text(color, color.name)}'\
-                    f' would disqualify all possible colors.\nThe card:\n'\
+                    f'Inconsistent hints: color {style_text(color, color.name)}'
+                    f' would disqualify all possible colors.\nThe card:\n'
                     f'{str(self)}'
                 )
             new_state.previous_states.append(self)
@@ -131,8 +139,8 @@ class UnknownCard:
         new_state.colors.discard(color)
         if len(new_state.colors) == 0:
             raise HanabiSimException(
-                f'Inconsistent hints; color {style_text(color, color.name)}'\
-                f' would disqualify all possible colors for a non-hinted card.\n'\
+                f'Inconsistent hints; color {style_text(color, color.name)}'
+                f' would disqualify all possible colors for a non-hinted card.\n'
                 f'The card:\n{str(self)}'
             )
         new_state.previous_states.append(self)
@@ -146,7 +154,7 @@ class UnknownCard:
         """
         if (number not in self.numbers):
             raise HanabiSimException(
-                f'Inconsistent hints; number {number} is not possible '\
+                f'Inconsistent hints; number {number} is not possible '
                 f'for a hinted card.\nThe card:\n{str(self)}'
             )
         if self.numbers == {number}: return self #nothing to do
@@ -166,7 +174,7 @@ class UnknownCard:
         new_state.numbers.discard(number)
         if len(new_state.numbers) == 0:
             raise HanabiSimException(
-                f'Inconsistent hints; number {number} would disqualify all '\
+                f'Inconsistent hints; number {number} would disqualify all '
                 f'possible numbers for a non-hinted card.\nThe card:\n{str(self)}'
             )
         new_state.previous_states.append(self)
@@ -195,7 +203,7 @@ class UnknownCard:
         """
         if (color not in self.colors):
             raise HanabiSimException(
-                f'Bad guess; color {style_text(color, color.name)} '\
+                f'Bad guess; color {style_text(color, color.name)} '
                 f'was previously ruled out for guessed card.'
             )
         if color == self.color_guess: return self #nothing to do
@@ -258,14 +266,16 @@ class UnknownCard:
 
     def __eq__(self, other):
         if not isinstance(other, UnknownCard): return False
-        return self.colors == other.colors               and \
-               self.numbers == other.numbers             and \
-               self.color_guess == other.color_guess     and \
-               self.number_guess == other.number_guess   and \
-               self.round_drawn == other.round_drawn     and \
-               self.round_updated == other.round_updated and \
-               self.turn_updated == other.turn_updated   and \
-               self.previous_states == other.previous_states
+        return (
+            self.colors == other.colors
+            and self.numbers == other.numbers
+            and self.color_guess == other.color_guess
+            and self.number_guess == other.number_guess
+            and self.round_drawn == other.round_drawn
+            and self.round_updated == other.round_updated
+            and self.turn_updated == other.turn_updated
+            and self.previous_states == other.previous_states
+        )
 
 
 class RealizedCard:
@@ -279,9 +289,11 @@ class RealizedCard:
 
     def __eq__(self, other):
         if not isinstance(other, RealizedCard): return False
-        return self.identity == other.identity and \
-               self.unrealized_state == other.unrealized_state and \
-               self.was_rainbow == other.was_rainbow
+        return (
+            self.identity == other.identity
+            and self.unrealized_state == other.unrealized_state
+            and self.was_rainbow == other.was_rainbow
+        )
 
     def __str__(self):
         if self.was_rainbow:

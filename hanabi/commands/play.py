@@ -8,19 +8,20 @@ from hanabi.game_objects.exceptions import (
 )
 
 
-PLAY_TEXT = \
-    'The "play" command, short form "p".  '\
-    'Used to indicate that turn player should play a card.\n'\
-    'Usage:\n'\
-    'play <position> <card>\n'\
-    'This causes the turn player to play his card in position <position> of his hand.\n'\
-    '---> <card> is a value which indicates what value the card had on being revealed.\n'\
-    '---> <card> is formatted as <color><number> or <number><color>; '\
-    'one-letter abbreviations allowed.\n'\
-    'Examples:\n'\
-    'play 1 1y (player plays card in position 1, which was a yellow 1)\n'\
-    'play 5 3green (player plays card in position 3, which was a green 3)\n'\
+PLAY_TEXT = (
+    'The "play" command, short form "p".  '
+    'Used to indicate that turn player should play a card.\n'
+    'Usage:\n'
+    'play <position> <card>\n'
+    'This causes the turn player to play his card in position <position> of his hand.\n'
+    '---> <card> is a value which indicates what value the card had on being revealed.\n'
+    '---> <card> is formatted as <color><number> or <number><color>; '
+    'one-letter abbreviations allowed.\n'
+    'Examples:\n'
+    'play 1 1y (player plays card in position 1, which was a yellow 1)\n'
+    'play 5 3green (player plays card in position 3, which was a green 3)\n'
     'play 2 r1 (player plays card in position 2, which was a red 1)'
+)
 
 WILD_PLAY_PROMPT = 'Select from the above table to which color firework this card applies:'
 

@@ -1,10 +1,11 @@
 from hanabi.commands.base import Command, CommandResult
 
 
-QUIT_TEXT = \
-    'The "quit" command, short form "q".  Used to quit the simulation.\n'\
-    'Usage:\n'\
+QUIT_TEXT = (
+    'The "quit" command, short form "q".  Used to quit the simulation.\n'
+    'Usage:\n'
     'quit'
+)
 
 
 class QuitCommand(Command):

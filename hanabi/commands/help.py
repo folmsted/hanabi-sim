@@ -1,12 +1,13 @@
 from hanabi.commands.base import Command, CommandResult
 
 
-HELP_TEXT = \
-    'The "help" command, short form "?".  You can call help with'\
-    ' a command after to get extra information.\n'\
-    'Examples:\n'\
-    'help s (for help on the "show" command)\n'\
+HELP_TEXT = (
+    'The "help" command, short form "?".  You can call help with'
+    ' a command after to get extra information.\n'
+    'Examples:\n'
+    'help s (for help on the "show" command)\n'
     'help hint (for help on the "hint" command)'
+)
 
 
 def _general_text():

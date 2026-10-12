@@ -1,10 +1,11 @@
 from hanabi.commands.base import Command, CommandResult
 
 
-UNDO_TEXT = \
-    'The "undo" command, short form "u".  Used to revert to the previous game state.\n'\
-    'Usage:\n'\
+UNDO_TEXT = (
+    'The "undo" command, short form "u".  Used to revert to the previous game state.\n'
+    'Usage:\n'
     'undo'
+)
 
 #The logic for the "undo" command
 def undo_text(options, game):
