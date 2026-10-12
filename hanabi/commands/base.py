@@ -21,6 +21,14 @@ class Command:
     accepts_subhelp = False
     help = {}
 
+    def handle(self, options, game):
+        """
+        Carry out this command for the given options and game, returning a
+        CommandResult.  Subclasses supply the code needed to process the
+        command, or to return a result explaining why it cannot proceed.
+        """
+        raise NotImplementedError
+
     def matches(self, token):
         """Return whether the given token names this command."""
         return token == self.name or token in self.aliases
