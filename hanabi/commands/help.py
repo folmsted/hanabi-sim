@@ -1,11 +1,5 @@
-from hanabi import help_text
 from hanabi.commands.base import Command, CommandResult
 
-
-GENERAL_TEXT = \
-    'Possible commands (full|shortcut):\nabout|a, help|?, show|s, '\
-    'play|p, hint|h, discard|d, guess|g, undo|u, swap, quit|q\n'\
-    'Call hint with these arguments for more information on format.'
 
 HELP_TEXT = \
     'The "help" command, short form "?".  You can call help with'\
@@ -14,14 +8,22 @@ HELP_TEXT = \
     'help s (for help on the "show" command)\n'\
     'help hint (for help on the "hint" command)'
 
-#Help text for commands which are not yet command objects; consulted until
-#those commands are converted in a later commit.
-_PENDING_HELP = {
-    'undo': help_text.help_undo,
-    'u': help_text.help_undo,
-    'quit': help_text.help_quit,
-    'q': help_text.help_quit,
-}
+
+def _general_text():
+    """
+    Build the general help text from the command registry, so the list of
+    commands and shortcuts can never drift from the commands themselves.
+    """
+    from hanabi import commands
+    labels = []
+    for command in commands.COMMANDS:
+        label = command.name if not command.aliases else f'{command.name}|{command.aliases[0]}'
+        labels.append(label)
+    return (
+        'Possible commands (full|shortcut):\n'
+        f'{", ".join(labels)}\n'
+        'Call hint with these arguments for more information on format.'
+    )
 
 
 class HelpCommand(Command):
@@ -39,7 +41,7 @@ class HelpCommand(Command):
         informative error when the path names no known command or option.
         """
         if not path:
-            return GENERAL_TEXT
+            return _general_text()
         from hanabi import commands
         command = commands.find(path[0])
         rest = path[1:]
@@ -50,6 +52,4 @@ class HelpCommand(Command):
                 return f'Unrecognized arguments {" ".join(rest)}'
             if not rest:
                 return command.help_for(())
-        elif not rest and path[0] in _PENDING_HELP:
-            return _PENDING_HELP[path[0]]
         return f'Did not recognize options {" ".join(path)}'

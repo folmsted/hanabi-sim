@@ -114,24 +114,18 @@ def main(argv=None):
                 game, text = result.game, result.text
                 print(text)
             case ['undo', *options] | ['u', *options]:
-                if options: text = f'Unrecognized options: {", ".join(options)}'
-                else:
-                    text = f'Reverting to prior state; round: {game.previous_state.round}, '\
-                    f'player up: {game.previous_state.players[game.previous_state.player_up].name}'\
-                    if game.previous_state else 'Cannot revert; no previous state to revert to'
-                    game = game.previous_state if game.previous_state else game
-                print(text)
+                result = ih.UNDO.handle(options, game)
+                game = result.game
+                print(result.text)
             case ['swap', *options]:
                 result = ih.SWAP.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
             case ['quit', *options] | ['q', *options]:
-                if options: text = f'Unrecognized options: {", ".join(options)}'
-                else:
-                    text = 'Quitting game'
-                    game.over = True
-                    break
-                print(text)
+                result = ih.QUIT.handle(options, game)
+                game = result.game
+                if result.stop: break
+                print(result.text)
 
     if outfile: outfile.close()
     print('Game is over')
