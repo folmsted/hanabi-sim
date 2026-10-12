@@ -156,7 +156,3 @@ def main(argv=None):
         if (QUIT.matches(choice[0])): break
     return 0
 
-
-if __name__ == '__main__':
-    raise SystemExit(main())
-
