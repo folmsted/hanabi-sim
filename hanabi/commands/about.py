@@ -9,7 +9,7 @@ ABOUT_TEXT = \
     '1) He hears all hints given, and knows the givers and recipients\n'\
     '2) He knows the identities of all cards discarded and played, '\
     'and the composition of the Hanabi deck\n'\
-    '3) He does NOT see the cards of any player; what he knows about'\
+    '3) He does NOT see the cards of any player; what he knows about '\
     'hands is purely by hint information\n'\
     '4) He has perfect memory of what he has seen and heard\n'\
     'By inputting to hanabi-sim the moves in a game of Hanabi, '\

@@ -53,7 +53,7 @@ SHOW_INFO_TEXT = \
     '         action|a for action taken.'
 
 SHOW_GRAPH_TEXT = \
-    'The "show command\'s "graph" option.  used to graph statistics about the game so far.\n'\
+    'The "show" command\'s "graph" option.  Used to graph statistics about the game so far.\n'\
     'Usage:\n'\
     'show graph|g <options>\n'\
     '---> <options> can be one of {play|p, discard|d, misfire|m, hint|h} to print\n'\
@@ -82,10 +82,10 @@ def show_text(choice, game):
             except HanabiInputException as e: return e.args[0]
             try: position = int(position)
             except ValueError: return f'Expected an integer card position; yours: {position}.'
-            if not 1 <= position <= len(player.hand): return f'Position {position} is out of range'
+            if not 1 <= position <= len(player.hand): return f'Position {position} is out of range.'
             text = f'{player.name} card {position}:\n{player.represent_card(position - 1)}'
         case ['card', *args] | ['c', *args]:
-            text = 'Additional input required for card histroy; see "help show"'
+            text = 'Additional input required for card history; see "help show"'
         case ['hand', *args] | ['h', *args]:
             if len(args) > 1: return f'Unrecognized arguments {", ".join(args)}; try "help show"'
             try: player_request = args[0]
@@ -203,7 +203,7 @@ def show_text(choice, game):
                      ['hint', '<',    player] | ['h', '<',    player] :
                     actions = game.get_actions_of_type(HintAction)
                     try: player_idx = game.get_player_index(player)
-                    except HanabiInputException as e: return  e.args[0]
+                    except HanabiInputException as e: return e.args[0]
                     target = lambda md: md.action.targetplayer_index
                     #filter out hints not from (to) the requested player
                     if args[1] in {'from', '<'}:
@@ -226,7 +226,7 @@ def show_text(choice, game):
                         title, data, pie_chart.DEFAULT_CHART_HEIGHT, True
                     )
                 case [*args]:
-                    text = f'Unrecognized arguments {"".join(args)}; try "help show graph"'
+                    text = f'Unrecognized arguments {" ".join(args)}; try "help show graph"'
         case [*args]:
             text = f'Unrecognized arguments: {", ".join(args)}; try "help show".'
     return text

@@ -2,7 +2,11 @@ import readline
 import argparse
 import random
 
-from hanabi import commands as ih, parsing, setup
+from hanabi.commands import (
+    ABOUT, HELP, SHOW, PLAY, WILD_PLAY, HINT, DISCARD, GUESS, UNDO, SWAP, QUIT,
+)
+from hanabi.parsing import trim_comment, COMMENT_START
+from hanabi.setup import get_rules, get_players
 from hanabi.game_objects.game_state import GameState
 from hanabi.game_objects.styling import style_text, prompt_generator
 
@@ -43,11 +47,11 @@ def main(argv=None):
     if outfile_name: outfile = open(outfile_name, 'w')
 
     color_picker = prompt_generator
-    try: rules = setup.get_rules(setup_choices, outfile, color_picker)
+    try: rules = get_rules(setup_choices, outfile, color_picker)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
         return 0
-    try: players, protocols = setup.get_players(setup_choices, outfile, color_picker)
+    try: players, protocols = get_players(setup_choices, outfile, color_picker)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
         return 0
@@ -66,7 +70,7 @@ def main(argv=None):
             print('\nProgram terminated by user.')
             return 0
         if outfile: outfile.write(choice + '\n')
-        choice = parsing.trim_comment(choice, parsing.COMMENT_START).split()
+        choice = trim_comment(choice, COMMENT_START).split()
         match choice:
             #if the game was ended by the last turn taken, give a chance to back out
             case ['y'] | ['Y'] if game.over:
@@ -81,48 +85,48 @@ def main(argv=None):
             case []:
                 continue
             case ['help', *options] | ['?', *options]:
-                print(ih.HELP.handle(options, game).text)
+                print(HELP.handle(options, game).text)
             case ['about', *options] | ['a', *options]:
-                print(ih.ABOUT.handle(options, game).text)
+                print(ABOUT.handle(options, game).text)
             case ['show', *options] | ['s', *options]:
-                print(ih.SHOW.handle(options, game).text)
+                print(SHOW.handle(options, game).text)
             case ['play', *options] | ['p', *options]:
                 try:
-                    result = ih.PLAY.handle(options, game, verbose=verbose)
+                    result = PLAY.handle(options, game, verbose=verbose)
                 except HanabiUserInputRequiredException as e:
                     print(e.args[3])
                     try:
                         choice = setup_choices.pop(0).strip() if setup_choices else \
-                            input(style_text(next(color_picker), ih.WILD_PLAY.prompt))
+                            input(style_text(next(color_picker), WILD_PLAY.prompt))
                     except (KeyboardInterrupt, EOFError):
                         print('Program terminated by user.')
                         exit(0)
                     if outfile: outfile.write(choice + '\n')
-                    result = ih.WILD_PLAY.handle(e.args, choice, game, verbose=verbose)
+                    result = WILD_PLAY.handle(e.args, choice, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
             case ['hint', *options] | ['h', *options]:
-                result = ih.HINT.handle(options, game, verbose=verbose)
+                result = HINT.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
             case ['discard', *options] | ['d', *options]:
-                result = ih.DISCARD.handle(options, game, verbose=verbose)
+                result = DISCARD.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
             case ['guess', *options] | ['g', *options]:
-                result = ih.GUESS.handle(options, game, verbose=verbose)
+                result = GUESS.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
             case ['undo', *options] | ['u', *options]:
-                result = ih.UNDO.handle(options, game)
+                result = UNDO.handle(options, game)
                 game = result.game
                 print(result.text)
             case ['swap', *options]:
-                result = ih.SWAP.handle(options, game, verbose=verbose)
+                result = SWAP.handle(options, game, verbose=verbose)
                 game, text = result.game, result.text
                 print(text)
             case ['quit', *options] | ['q', *options]:
-                result = ih.QUIT.handle(options, game)
+                result = QUIT.handle(options, game)
                 game = result.game
                 if result.stop: break
                 print(result.text)
@@ -146,9 +150,9 @@ def main(argv=None):
         choice = choice.split()
         if (not choice): continue
         if (choice[0] == 'help' or choice[0] == '?'):
-            print(ih.HELP.handle(choice[1:], game).text)
+            print(HELP.handle(choice[1:], game).text)
         if (choice[0] == 'show' or choice[0] == 's'):
-            print(ih.SHOW.handle(choice[1:], game).text)
+            print(SHOW.handle(choice[1:], game).text)
         if (choice[0] == 'quit' or choice[0] == 'q'): break
     return 0
 

@@ -16,7 +16,7 @@ HINT_TEXT = \
     '---> <player> can be a number indicating turn order or a\n'\
     '     string which unambiguously identifies the player by name.\n'\
     '---> <positions> is a space-separated list of numbers\n'\
-    '     indicating the postions at which to apply the <hint>.\n'\
+    '     indicating the positions at which to apply the <hint>.\n'\
     '---> <hint> is a number or a string (not both) representing\n'\
     '     the color or number being indicated.\n'\
     'Examples:\n'\

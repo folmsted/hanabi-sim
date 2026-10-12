@@ -22,7 +22,7 @@ def _general_text():
     return (
         'Possible commands (full|shortcut):\n'
         f'{", ".join(labels)}\n'
-        'Call hint with these arguments for more information on format.'
+        'Call help with a command for more information on format.'
     )
 
 

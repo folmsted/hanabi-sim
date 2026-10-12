@@ -17,7 +17,7 @@ GUESS_TEXT = \
     'a way to keep track of thoughts.\n'\
     '---> <player> can be a number indicating turn order or a\n'\
     '     string which unambiguously identifies the player by name.\n'\
-    '---> <position> is a number indicating the postion \n'\
+    '---> <position> is a number indicating the position\n'\
     '     at which to apply <guess>.\n'\
     '---> <guess> is a number or a string (not both) '\
     'representing the color or number being indicated.\n'\
