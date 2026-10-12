@@ -279,7 +279,7 @@ def sort_stats_players(actions, sort):
 #Given a list of potentially repeating elemets, return a map for unique elements
 #to the number of times the element appeared in the list
 def unique_counts(l):
-    return { label : len([*filter(lambda x: x == label, l)]) for label in set(l) }
+    return { label : len([*filter(lambda x: x == label, l)]) for label in dict.fromkeys(l) }
     
 
 #help strings.  Moved here because they are unruly and ugly

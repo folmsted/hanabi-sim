@@ -210,8 +210,8 @@ def handle_show(choice, game):
                     #don't put the target player in the chart; he can't hint himself
                     #but do put other players in even if they haven't hinted the target
                     #(or been hinted by the target)
-                    eligible_players = {p.name for p in game.players} - \
-                                       {game.get_player(player_idx).name}
+                    target_name = game.get_player(player_idx).name
+                    eligible_players = [p.name for p in game.players if p.name != target_name]
                     data = {p : 0 for p in eligible_players} | util.unique_counts(actions)
                     st = 'to' if args[1] in {'to', '>'} else 'from'
                     title = f'Hints {st} {game.get_player(player_idx).name}'
