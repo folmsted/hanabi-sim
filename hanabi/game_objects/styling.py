@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from colorama import Fore, Back, Style
 
-from game_objects.color import Color, generate_color
+from hanabi.game_objects.color import Color, generate_color
 
 
 #Color.render exposed as a standalone printing function

@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from game_objects.card import RealizedCard
+from hanabi.game_objects.card import RealizedCard
 
 
 class HintAction:

@@ -1,11 +1,11 @@
 from tabulate import tabulate
-import util
+from hanabi import parsing, reporting, help_text, pie_chart
 
-from game_objects.color import Color
-from game_objects.styling import style_text
-from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from hanabi.game_objects.color import Color
+from hanabi.game_objects.styling import style_text
+from hanabi.game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
 
-from game_objects.exceptions import (
+from hanabi.game_objects.exceptions import (
     HanabiException, HanabiIndexException, HanabiInputException,
     HanabiSimException, HanabiUserInputRequiredException,
 )
@@ -18,42 +18,42 @@ def handle_help(choice):
     #no options given
     match choice:
         case []:
-           text = util.help_general
+           text = help_text.help_general
         case ['about'] | ['a']:
-           text = util.help_about
+           text = help_text.help_about
         case ['help'] | ['?']:
-           text = util.help_help
+           text = help_text.help_help
         case ['show', *args] | ['s', *args]:
            match args:
                case ['info'] | ['i']:
-                   text = util.help_show_info
+                   text = help_text.help_show_info
                case ['graph'] | ['g']:
-                   text = util.help_show_graph
+                   text = help_text.help_show_graph
                case []:
-                   text = util.help_show
+                   text = help_text.help_show
                case _:
                    text = f'Unrecognized arguments {" ".join(args)}'
         case ['play'] | ['p']:
-           text = util.help_play
+           text = help_text.help_play
         case ['hint'] | ['h']:
-           text = util.help_hint
+           text = help_text.help_hint
         case ['discard'] | ['d']:
-           text = util.help_discard
+           text = help_text.help_discard
         case ['guess'] | ['g']:
-           text = util.help_guess
+           text = help_text.help_guess
         case ['undo'] | ['u']:
-           text = util.help_undo
+           text = help_text.help_undo
         case ['swap']:
-           text = util.help_swap
+           text = help_text.help_swap
         case ['quit'] | ['q']:
-           text = util.help_quit
+           text = help_text.help_quit
         case _:
             text = f'Did not recognize options {" ".join(choice)}'
     return text
 
 def handle_about(options):
     if options: return f'Did not recognize options {" ".join(options)}.'
-    return util.help_about
+    return help_text.help_about
 
 #The logic for the "show" command
 def handle_show(choice, game):
@@ -70,7 +70,7 @@ def handle_show(choice, game):
         case ['discard'] | ['d']:
             text = game.represent_discard()
         case ['card', player, position] | ['c', player, position]:
-            try: player = util.resolve_player(player, game)
+            try: player = parsing.resolve_player(player, game)
             except HanabiInputException as e: return e.args[0]
             try: position = int(position)
             except ValueError: return f'Expected an integer card position; yours: {position}.'
@@ -82,7 +82,7 @@ def handle_show(choice, game):
             if len(args) > 1: return f'Unrecognized arguments {", ".join(args)}; try "help show"'
             try: player_request = args[0]
             except IndexError as e: player_request = game.player_up + 1 #default is player up
-            try: player = util.resolve_player(player_request, game)
+            try: player = parsing.resolve_player(player_request, game)
             except HanabiInputException as e: return e.args[0]
             text = str(player)
         case ['rules'] | ['r']:
@@ -92,7 +92,7 @@ def handle_show(choice, game):
                 case ['play', *sort] | ['p', *sort]:
                     actions = game.get_actions_of_type(PlayAction)
                     header = ['index', 'round', 'player', 'card']
-                    try: action_metadata = util.sort_stats_playdiscardmisfire(actions, sort)
+                    try: action_metadata = reporting.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
@@ -105,7 +105,7 @@ def handle_show(choice, game):
                 case ['discard', *sort] | ['d', *sort]:
                     actions = game.get_actions_of_type(DiscardAction)
                     header = ['index', 'round', 'player', 'card']
-                    try: action_metadata = util.sort_stats_playdiscardmisfire(actions, sort)
+                    try: action_metadata = reporting.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
@@ -118,7 +118,7 @@ def handle_show(choice, game):
                 case ['misfire', *sort] | ['m', *sort]:
                     actions = game.get_actions_of_type(MisfireAction)
                     header = ['index', 'round', 'player', 'card']
-                    try: action_metadata = util.sort_stats_playdiscardmisfire(actions, sort)
+                    try: action_metadata = reporting.sort_stats_playdiscardmisfire(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
@@ -131,7 +131,7 @@ def handle_show(choice, game):
                 case ['hint', *sort] | ['h', *sort]:
                     actions = game.get_actions_of_type(HintAction)
                     header = ['index', 'round', 'giver', 'receiver', 'cards', 'hint']
-                    try: action_metadata = util.sort_stats_hints(actions, sort)
+                    try: action_metadata = reporting.sort_stats_hints(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [index + 1,
@@ -144,11 +144,11 @@ def handle_show(choice, game):
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
                 case [player_request, *sort]:
-                    try: player = util.resolve_player(player_request, game)
+                    try: player = parsing.resolve_player(player_request, game)
                     except HanabiInputException as e: return e.args[0]
                     actions = game.get_actions_of_player(game.get_player_index(player))
                     header = ['index', 'round', f'{player.name} action']
-                    try: actions_metadata = util.sort_stats_players(actions, sort)
+                    try: actions_metadata = reporting.sort_stats_players(actions, sort)
                     except HanabiSimException as e: return e.args[0]
                     rows = [
                         [i + 1,
@@ -192,7 +192,7 @@ def handle_show(choice, game):
                         for name in [p.name for p in game.players]
                     }
                     title = f'{st} Actions by Player'
-                    text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
+                    text = pie_chart.generate_pie_chart(title, data, pie_chart.DEFAULT_CHART_HEIGHT, True)
                 case ['hint', 'to',   player] | ['h', 'to',   player] | \
                      ['hint', '>',    player] | ['h', '>',    player] | \
                      ['hint', 'from', player] | ['h', 'from', player] | \
@@ -216,10 +216,10 @@ def handle_show(choice, game):
                     #(or been hinted by the target)
                     target_name = game.get_player(player_idx).name
                     eligible_players = [p.name for p in game.players if p.name != target_name]
-                    data = {p : 0 for p in eligible_players} | util.unique_counts(actions)
+                    data = {p : 0 for p in eligible_players} | reporting.unique_counts(actions)
                     st = 'to' if args[1] in {'to', '>'} else 'from'
                     title = f'Hints {st} {game.get_player(player_idx).name}'
-                    text = util.generate_pie_chart(title, data, util.DEFAULT_CHART_HEIGHT, True)
+                    text = pie_chart.generate_pie_chart(title, data, pie_chart.DEFAULT_CHART_HEIGHT, True)
                 case [*args]:
                     text = f'Unrecognized arguments {"".join(args)}; try "help show graph"'
         case [*args]:
@@ -235,7 +235,7 @@ def handle_play(choice, game, verbose=False):
             return game, f'Unrecognized arguments: {", ".join(args)}; try "help play"'
         case [*args]:
             return game, 'This command requires additional input; try "help play"'
-    try: card = util.read_card(card)
+    try: card = parsing.read_card(card)
     except HanabiInputException as e: return game, e.args[0]
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
@@ -264,7 +264,7 @@ def handle_wild_play(e_args, game, setup_choices, outfile, color_picker, verbose
     #valid colors are at least 1 and at most 5, by construction, since there are
     #only ever 5, not 6 suits in wild-play mode because rainbow is not a suit.
     #Therefore we can reuse this function.
-    try: choice = util.read_color_or_number(choice)
+    try: choice = parsing.read_color_or_number(choice)
     except HanabiInputException as e: return game, e.args[0]
     if isinstance(choice, int):
         try: choice = colors[choice - 1]
@@ -303,7 +303,7 @@ def handle_hint(choice, game, verbose=False):
     try: target_player = game.get_player(target_player)
     except HanabiInputException as e: return game, e.args[0]
     #resolve hint
-    try: hint = util.read_color_or_number(hint)
+    try: hint = parsing.read_color_or_number(hint)
     except HanabiInputException as e: return game, e.args[0]
     #resolve positions
     if (not positions): return game, 'You must specify positions to hint to.'
@@ -327,7 +327,7 @@ def handle_discard(choice, game, verbose=False):
             return game, f'Unrecognized arguments: {", ".join(args)}; try "help discard"'
         case [*args]:
             return game, 'This command requires additional input; try "help discard"'
-    try: card = util.read_card(card)
+    try: card = parsing.read_card(card)
     except HanabiInputException as e: return game, e.args[0]
     try: position = int(position)
     except ValueError as e: return game, f'The specified position ({position}) is not an integer.'
@@ -346,9 +346,9 @@ def handle_guess(choice, game, verbose=False):
             return game, f'Unrecognized arguments: {", ".join(args)}; try "help guess"'
         case [*args]:
             return game, 'This command requires additional input; try "help guess"'
-    try: player = util.resolve_player(player, game)
+    try: player = parsing.resolve_player(player, game)
     except HanabiInputException as e: return game, e.args[0]
-    try: guess = util.read_color_or_number(guess)
+    try: guess = parsing.read_color_or_number(guess)
     except HanabiInputException as e: return game, e.args[0]
     try: position = int(position)
     except ValueError: return game, f'Invalid position; expected number 1 to 5; yours: {position}'
@@ -369,7 +369,7 @@ def handle_swap(choice, game, verbose=False):
         case [*args]:
             #too few options
             return game, 'This command requires additional input; try "help swap"'
-    try: player = util.resolve_player(player, game)
+    try: player = parsing.resolve_player(player, game)
     except HanabiInputException as e: return game, e.args[0]
     try: index1, index2 = int(index1), int(index2)
     except ValueError: return game, f'Integers expected as indices; yours: {index1, index2}'

@@ -1,12 +1,12 @@
 from tabulate import tabulate
-from game_objects.color import Color
+from hanabi.game_objects.color import Color
 
-from game_objects.card import Card, RealizedCard
-from game_objects.card import MAX_CARD_VALUE
-from game_objects.card_collections import Hand
+from hanabi.game_objects.card import Card, RealizedCard
+from hanabi.game_objects.card import MAX_CARD_VALUE
+from hanabi.game_objects.card_collections import Hand
 
-from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
-from game_objects.exceptions import (
+from hanabi.game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from hanabi.game_objects.exceptions import (
     HanabiIndexException, HanabiRulesException,
     HanabiSimException, HanabiUserInputRequiredException,
 )

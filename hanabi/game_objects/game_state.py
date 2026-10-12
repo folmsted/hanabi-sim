@@ -1,15 +1,15 @@
 from tabulate import tabulate
 from collections import defaultdict
 
-from game_objects.rules import HanabiRuleset
-from game_objects.color import Color
-from game_objects.card import Card
-from game_objects.card import MAX_CARD_VALUE
-from game_objects.card_collections import PlayedCards, OutstandingCards, DiscardedCards
-from game_objects.player import Player
-from game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
-from game_objects.actions import ActionMetadata
-from game_objects.exceptions import (
+from hanabi.game_objects.rules import HanabiRuleset
+from hanabi.game_objects.color import Color
+from hanabi.game_objects.card import Card
+from hanabi.game_objects.card import MAX_CARD_VALUE
+from hanabi.game_objects.card_collections import PlayedCards, OutstandingCards, DiscardedCards
+from hanabi.game_objects.player import Player
+from hanabi.game_objects.actions import HintAction, DiscardAction, PlayAction, MisfireAction
+from hanabi.game_objects.actions import ActionMetadata
+from hanabi.game_objects.exceptions import (
     HanabiRulesException, HanabiSimException, HanabiInputException,
 )
 
