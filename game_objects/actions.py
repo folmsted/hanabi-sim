@@ -1,3 +1,6 @@
+from game_objects.card import RealizedCard
+
+
 class HintAction:
 
     def __init__(self, targetplayer_index, hint, positions, before_hand, after_hand):
@@ -10,22 +13,19 @@ class HintAction:
 
 class DiscardAction:
 
-    def __init__(self, card, card_state_on_discard):
-        self.card = card
-        self.card_state_on_discard = card_state_on_discard
+    def __init__(self, realized):
+        self.realized = realized
 
 
 class PlayAction:
 
-    def __init__(self, card, card_state_on_play):
-        self.card = card
-        self.card_state_on_play = card_state_on_play
+    def __init__(self, realized):
+        self.realized = realized
 
 
 class MisfireAction:
 
-    def __init__(self, card, card_state_on_misfire):
-        self.card = card
-        self.card_state_on_misfire = card_state_on_misfire
+    def __init__(self, realized):
+        self.realized = realized
 
 

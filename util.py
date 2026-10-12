@@ -230,7 +230,7 @@ def sort_stats_playdiscardmisfire(actions, sort):
     #define a function for sorting the actions according to requested sort field
     key = lambda metadata: metadata.rnd         if  'round'.startswith(sort) else \
                            metadata.player      if 'player'.startswith(sort) else \
-                           metadata.action.card if   'card'.startswith(sort) else \
+                           metadata.action.realized.identity if   'card'.startswith(sort) else \
                            0 #default to no sorting if nothing matches
     actions_metadata.sort(key = key)
     return actions_metadata

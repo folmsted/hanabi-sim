@@ -98,7 +98,7 @@ def handle_show(choice, game):
                         [index + 1,
                          md.rnd + 1,
                          game.players[md.player].name,
-                         md.action.card
+                         md.action.realized
                         ] for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
@@ -111,7 +111,7 @@ def handle_show(choice, game):
                         [index + 1,
                          md.rnd + 1,
                          game.players[md.player].name,
-                         md.action.card
+                         md.action.realized
                         ] for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
@@ -124,7 +124,7 @@ def handle_show(choice, game):
                         [index + 1,
                          md.rnd + 1,
                          game.players[md.player].name,
-                         md.action.card
+                         md.action.realized
                         ] for index, md in enumerate(action_metadata)
                     ]
                     text = tabulate(rows, headers=header, tablefmt='pretty')
@@ -155,9 +155,12 @@ def handle_show(choice, game):
                     rows = [
                         [i + 1,
                         md.rnd + 1,
-                        f'Played {md.action.card}'    if isinstance(md.action, PlayAction)    else
-                        f'Discarded {md.action.card}' if isinstance(md.action, DiscardAction) else
-                        f'Misfired {md.action.card}'  if isinstance(md.action, MisfireAction) else
+                        f'Played {md.action.realized}'
+                        if isinstance(md.action, PlayAction) else
+                        f'Discarded {md.action.realized}'
+                        if isinstance(md.action, DiscardAction) else
+                        f'Misfired {md.action.realized}'
+                        if isinstance(md.action, MisfireAction) else
                         f'Hinted {game.players[md.action.targetplayer_index].name} about '\
                         f'{md.action.hint} at positions ' \
                         f'{", ".join([str(p + 1) for p in md.action.positions])}.'

@@ -1,7 +1,7 @@
 from tabulate import tabulate
 from game_objects.color import Color
 
-from game_objects.card import Card
+from game_objects.card import Card, RealizedCard
 from game_objects.card import MAX_CARD_VALUE
 from game_objects.card_collections import Hand
 
@@ -42,7 +42,7 @@ class Player:
         new_state.hints += 1
         #Put the card in the discard pile for its color; keep the pile sorted numerically
         new_state.discard = new_state.discard.add(card)
-        new_state.turns_taken.append(DiscardAction(card, self.hand[position]))
+        new_state.turns_taken.append(DiscardAction(RealizedCard(card, self.hand[position])))
         try: new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         except ValueError:
             errstr = f'The card you specified, {card}, is exhausted '\
@@ -89,7 +89,7 @@ class Player:
             valid_colors = [c.color for c in game.play.values() if c.number + 1 == card.number]
             #no possible colors to play to; misfire
             if not valid_colors:
-                new_state.turns_taken.append(MisfireAction(card, self.hand[position]))
+                new_state.turns_taken.append(MisfireAction(RealizedCard(card, self.hand[position])))
                 new_state.misfires += 1
                 new_state.over = new_state.misfires > new_state.MAX_MISFIRES
                 if game.rules['bombs_give_hints']:
@@ -105,7 +105,7 @@ class Player:
         else: #card.color != Color.MULTICOLOR or game.rules['rainbow_play'] == 'suit'
             #successful play
             if (card.number == new_state.play[card.color].number + 1):
-                new_state.turns_taken.append(PlayAction(card, self.hand[position]))
+                new_state.turns_taken.append(PlayAction(RealizedCard(card, self.hand[position])))
                 new_state.play = new_state.play.add(card)
                 if card.number == MAX_CARD_VALUE:
                     new_state.hints += 1 if new_state.hints < new_state.MAX_HINTS else 0
@@ -113,7 +113,7 @@ class Player:
                         new_state.over = True
             #unsuccessful play
             else:
-                new_state.turns_taken.append(MisfireAction(card, self.hand[position]))
+                new_state.turns_taken.append(MisfireAction(RealizedCard(card, self.hand[position])))
                 new_state.misfires += 1
                 new_state.over = new_state.misfires > new_state.MAX_MISFIRES
                 if game.rules['bombs_give_hints']:
@@ -139,9 +139,11 @@ class Player:
         #TODO user input
         new_state = game.copy()
         #import pdb; pdb.set_trace()
-        new_state.turns_taken.append(PlayAction(card, self.hand[position]))
+        realized_identity = Card(color_choice, card.number)
+        realized = RealizedCard(realized_identity, self.hand[position], was_rainbow=True)
+        new_state.turns_taken.append(PlayAction(realized))
         #add to the chosen color's play; consider the rainbow card discarded
-        new_state.play = new_state.play.add(Card(color_choice, card.number))
+        new_state.play = new_state.play.add(realized_identity)
         new_state.discard = new_state.discard.add(card)
         new_state.outstanding_cards = new_state.outstanding_cards.remove(card)
         if card.number == MAX_CARD_VALUE:
