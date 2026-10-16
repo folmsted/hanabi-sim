@@ -94,7 +94,7 @@ def get_players(setup_choices, outfile, color_picker):
             print(f'Player names must be no more than 16 characters; yours {len(playername)}.')
             continue
         #check whether any character is whitespace
-        if True in [c in ' \t\n\r\x0b\x0c' for c in playername]:
+        if any([c in ' \t\n\r\x0b\x0c' for c in playername]):
             print('Player names must not have any whitespace.')
             continue
         if (not playername and len(players) < GameState.MIN_PLAYERS):

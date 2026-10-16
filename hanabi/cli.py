@@ -8,7 +8,7 @@ from hanabi.commands import (
 from hanabi.parsing import trim_comment, COMMENT_START
 from hanabi.setup import get_rules, get_players
 from hanabi.game_objects.game_state import GameState
-from hanabi.game_objects.styling import style_text, prompt_generator
+from hanabi.game_objects.styling import style_text, prompt_colorer
 
 from hanabi.game_objects.exceptions import (
     HanabiRulesException, HanabiSimException, HanabiUserInputRequiredException,
@@ -46,12 +46,11 @@ def main(argv=None):
             print(f'Error reading infile; {infile_name}; infile use aborted.')
     if outfile_name: outfile = open(outfile_name, 'w')
 
-    color_picker = prompt_generator
-    try: rules = get_rules(setup_choices, outfile, color_picker)
+    try: rules = get_rules(setup_choices, outfile, prompt_colorer)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
         return 0
-    try: players, protocols = get_players(setup_choices, outfile, color_picker)
+    try: players, protocols = get_players(setup_choices, outfile, prompt_colorer)
     except (KeyboardInterrupt, EOFError):
         print('\nProgram terminated by user.')
         return 0
@@ -68,7 +67,7 @@ def main(argv=None):
         try:
             choice = (
                 setup_choices.pop(0).strip() if setup_choices
-                else input(style_text(next(color_picker), prompt))
+                else input(style_text(next(prompt_colorer), prompt))
             )
         except (KeyboardInterrupt, EOFError):
             print('\nProgram terminated by user.')
@@ -104,7 +103,7 @@ def main(argv=None):
                     try:
                         choice = (
                             setup_choices.pop(0).strip() if setup_choices
-                            else input(style_text(next(color_picker), WILD_PLAY.prompt))
+                            else input(style_text(next(prompt_colorer), WILD_PLAY.prompt))
                         )
                     except (KeyboardInterrupt, EOFError):
                         print('Program terminated by user.')
@@ -142,11 +141,12 @@ def main(argv=None):
     if outfile: outfile.close()
     print('Game is over')
     choice = ''
+    #allow users to view statistics about the finished game before ending the program
     while (True):
         try:
             choice = input(
                 style_text(
-                    next(color_picker),
+                    next(prompt_colorer),
                     'You may inquire about the game, but not make plays,'
                     ' discards, or hints (\'q\' exits):',
                 )

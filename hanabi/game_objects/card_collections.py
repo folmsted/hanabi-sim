@@ -35,7 +35,7 @@ class Hand:
                         if i in positions
                         else card.hint_color_negative(hint, r, t, rules)
                     )
-                except HanabiSimException  as e: raise HanabiIndexException(i, *e.args)
+                except HanabiSimException   as e: raise HanabiIndexException(i, *e.args)
                 except HanabiRulesException as e: raise e
             else:
                 try:
@@ -300,6 +300,3 @@ class DiscardedCards:
             ]
             data.append(row)
         return tabulate(data, headers='firstrow', tablefmt = 'pretty')
-
-
-

@@ -40,7 +40,8 @@ class HanabiRuleset:
                  f'(when set to "wild").  A "wild" rainbow card can add to any\n'
                  f'color\'s firework for which its number is valid when played,\n'
                  f'determined by the player playing the card.  A "suit" rainbow\n'
-                 f'card plays into the rainbow suit.'
+                 f'card plays into the rainbow suit.  Rule available only if '
+                 f'rainbow_enabled is True.'
         ),
         'bombs_give_hints': dict(
             default=True, #contrary to actual rules, but this is more fun

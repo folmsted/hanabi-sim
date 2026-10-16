@@ -29,7 +29,7 @@ class HanabiInputException(HanabiException):
     Examples: an unrecognized color word, an integer where a card is
     required, a player name matching nobody, or a player index that does
     not exist.  Input that parses but is disallowed by the rules or
-    impossible given the state is a HanabiRules- or HanabiSimException
+    impossible given the state is a HanabiRulesException or HanabiSimException
     instead.
     """
 

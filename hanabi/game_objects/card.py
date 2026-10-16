@@ -299,6 +299,3 @@ class RealizedCard:
         if self.was_rainbow:
             return str(Card(Color.MULTICOLOR, self.identity.number)) + '->' + str(self.identity)
         return str(self.identity)
-
-
-

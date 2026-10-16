@@ -10,7 +10,7 @@ from hanabi.game_objects.color import Color, generate_color
 style_text = Color.render
 
 #color picker for generating different-colored prompts
-prompt_generator = generate_color()
+prompt_colorer = generate_color()
 
 SUSPICION_STYLE = defaultdict(lambda: f'{Back.LIGHTWHITE_EX}{Fore.BLACK}') | {
     Color.BLUE:       Back.BLUE,
